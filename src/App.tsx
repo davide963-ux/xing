@@ -2,11 +2,13 @@ import { useMemo } from 'react'
 import { cardLabel } from './engine/cards'
 import type { GameConfig, MatchState } from './engine/types'
 import { Card } from './ui/Card'
-import { RoundResults, RulesModal, SettingsModal, SetupScreen, WinnerScreen } from './ui/Panels'
-import { describeEvent, posOf, seatName, teamName } from './ui/format'
+import { EndedScreen, LobbyScreen, RoundResults, RulesModal, SettingsModal, SetupScreen, WinnerScreen } from './ui/Panels'
+import { describeEvent, meOf, posOf, seatName, teamName } from './ui/format'
 import type { Pos } from './ui/format'
 import { useGame } from './ui/useGame'
-import type { Anim, Banner } from './ui/useGame'
+import type { Settings } from './ui/useGame'
+import type { Anim, Banner } from './ui/playFx'
+import { useOnline } from './online/useOnline'
 import { teamOf } from './engine/engine'
 import { AuthGate, displayName, signOut } from './auth/AuthGate'
 
@@ -18,48 +20,92 @@ export default function App() {
   )
 }
 
+export interface Ctl {
+  match: MatchState | null
+  anim: Anim | null
+  banner: Banner | null
+  overlay: 'round' | 'winner' | null
+  modal: 'rules' | 'settings' | null
+  setModal: (m: 'rules' | 'settings' | null) => void
+  settings: Settings
+  setSettings: (s: Settings) => void
+  play: (seat: number, cardId: number) => void
+  continueRound: () => void
+  again: () => void
+  leave: () => void
+  online: boolean
+  waitingNext: boolean
+}
+
 function Game({ user }: { user: string }) {
-  const g = useGame()
-  const { match, settings } = g
+  const off = useGame()
+  const on = useOnline(user, off.settings, off.setSettings)
+  const { settings } = off
+
+  const offline: Ctl = {
+    ...off,
+    again: () => off.startMatch(off.match?.config ?? settings.config),
+    leave: off.backToSetup,
+    online: false,
+    waitingNext: false,
+  }
+  const online: Ctl = {
+    ...on,
+    again: () => on.search(on.wantPlayers),
+    online: true,
+  }
+  const g = on.phase === 'playing' && on.match ? online : offline
+  const { match } = g
+
+  let screen
+  if (on.phase === 'searching' || on.phase === 'joining') {
+    screen = <LobbyScreen phase={on.phase} waiting={on.waiting} need={on.wantPlayers} onCancel={on.leave} />
+  } else if (on.phase === 'ended') {
+    screen = <EndedScreen message={on.endMsg} onRetry={() => on.search(on.wantPlayers)} onMenu={on.leave} />
+  } else if (!match) {
+    screen = (
+      <SetupScreen
+        settings={settings}
+        onChange={off.setSettings}
+        onStart={() => off.startMatch(settings.config)}
+        onOnline={() => on.search(settings.config.playerCount)}
+        onRules={() => off.setModal('rules')}
+        user={user}
+        onSignOut={() => void signOut()}
+      />
+    )
+  } else {
+    screen = <GameView g={g} match={match} user={user} />
+  }
 
   return (
     <div className="app">
-      {!match ? (
-        <SetupScreen
-          settings={settings}
-          onChange={g.setSettings}
-          onStart={() => g.startMatch(settings.config)}
-          onRules={() => g.setModal('rules')}
-          user={user}
-          onSignOut={() => void signOut()}
-        />
-      ) : (
-        <GameView g={g} match={match} user={user} />
-      )}
+      {screen}
       {g.modal === 'rules' && <RulesModal onClose={() => g.setModal(null)} />}
-      {g.modal === 'settings' && (
+      {g.modal === 'settings' && !g.online && (
         <SettingsModal
           settings={settings}
-          onSound={(on) => g.setSettings({ ...settings, sound: on })}
+          onSound={(on) => off.setSettings({ ...settings, sound: on })}
           onApply={(s) => {
             const rulesChanged = JSON.stringify(s.config) !== JSON.stringify(settings.config)
-            g.setSettings(s)
-            if (rulesChanged) g.startMatch(s.config)
-            else g.setModal(null)
+            off.setSettings(s)
+            if (rulesChanged) off.startMatch(s.config)
+            else off.setModal(null)
           }}
-          onClose={() => g.setModal(null)}
+          onClose={() => off.setModal(null)}
         />
       )}
     </div>
   )
 }
 
-function GameView({ g, match, user }: { g: ReturnType<typeof useGame>; match: MatchState; user: string }) {
+function GameView({ g, match, user }: { g: Ctl; match: MatchState; user: string }) {
   const { round, config } = match
   const n = config.playerCount
   const hiddenSet = useMemo(() => new Set(g.anim ? g.anim.hidden : round.hiddenOnTable), [g.anim, round.hiddenOnTable])
   const tableIds = g.anim ? g.anim.table : round.table
-  const myTurn = round.phase === 'playing' && round.current === 0 && !g.anim && !g.overlay && !g.modal
+  const me = meOf(config)
+  const myTurn = round.phase === 'playing' && round.current === me && !g.anim && !g.overlay && !g.modal
 
   const seatsByPos = new Map<Pos, number>()
   for (let s = 0; s < n; s++) seatsByPos.set(posOf(config, s), s)
@@ -74,16 +120,20 @@ function GameView({ g, match, user }: { g: ReturnType<typeof useGame>; match: Ma
             <button className="btn sm" onClick={() => g.setModal('rules')}>
               Rules
             </button>
-            <button className="btn sm" onClick={() => g.setModal('settings')}>
-              Settings
-            </button>
+            {!g.online && (
+              <button className="btn sm" onClick={() => g.setModal('settings')}>
+                Settings
+              </button>
+            )}
             <button
               className="btn sm"
               onClick={() => {
-                if (window.confirm('Restart the match? Current scores will be lost.')) g.startMatch(config)
+                if (g.online) {
+                  if (window.confirm('Leave this online match?')) g.leave()
+                } else if (window.confirm('Restart the match? Current scores will be lost.')) g.again()
               }}
             >
-              Restart
+              {g.online ? 'Leave' : 'Restart'}
             </button>
             <button
               className="btn sm"
@@ -126,17 +176,17 @@ function GameView({ g, match, user }: { g: ReturnType<typeof useGame>; match: Ma
           <div className={`me ${myTurn ? 'active' : ''}`}>
             <div className="nameplate">
               <span className="dot" />
-              {seatName(config, 0)} {n === 4 && <small>(with {seatName(config, 2)})</small>}
+              {seatName(config, me)} {n === 4 && <small>(with {seatName(config, (me + 2) % 4)})</small>}
               {myTurn && <em>Your turn – pick a card</em>}
             </div>
             <div className="hand">
-              {round.hands[0].map((id, i) => (
+              {round.hands[me].map((id, i) => (
                 <Card
                   key={id}
                   id={id}
                   className="deal"
                   style={{ ['--i' as string]: i }}
-                  onClick={() => g.play(0, id)}
+                  onClick={() => g.play(me, id)}
                   disabled={!myTurn}
                 />
               ))}
@@ -166,9 +216,9 @@ function GameView({ g, match, user }: { g: ReturnType<typeof useGame>; match: Ma
         </ol>
       </aside>
 
-      {g.overlay === 'round' && <RoundResults match={match} onContinue={g.continueRound} />}
+      {g.overlay === 'round' && <RoundResults match={match} onContinue={g.continueRound} waiting={g.waitingNext} />}
       {g.overlay === 'winner' && match.winner !== null && (
-        <WinnerScreen match={match} onAgain={() => g.startMatch(config)} onMenu={g.backToSetup} />
+        <WinnerScreen match={match} onAgain={g.again} onMenu={g.leave} />
       )}
     </div>
   )
@@ -176,6 +226,7 @@ function GameView({ g, match, user }: { g: ReturnType<typeof useGame>; match: Ma
 
 function Scoreboard({ match }: { match: MatchState }) {
   const { config, round } = match
+  const myTeam = meOf(config) % 2
   const turnTeam = round.phase === 'playing' ? teamOf(round.current) : -1
   return (
     <div className="scoreboard">
@@ -183,7 +234,7 @@ function Scoreboard({ match }: { match: MatchState }) {
         const past10 = match.roundHistory.reduce((a, r) => a + r.teams[t].xing10Count, 0) + round.xing10[t] * (match.roundCommitted ? 0 : 1)
         const past20 = match.roundHistory.reduce((a, r) => a + r.teams[t].xing20Count, 0) + round.xing20[t] * (match.roundCommitted ? 0 : 1)
         return (
-          <div key={t} className={`team t${t} ${turnTeam === t ? 'turn' : ''}`}>
+          <div key={t} className={`team ${t === myTeam ? 't0' : 't1'} ${turnTeam === t ? 'turn' : ''}`}>
             <div className="tname">{teamName(config, t)}</div>
             <div className="tscore">{match.scores[t]}</div>
             <div className="tmeta">
@@ -207,7 +258,7 @@ function Scoreboard({ match }: { match: MatchState }) {
 function Opponent({ pos, seat, match, active }: { pos: Pos; seat: number; match: MatchState; active: boolean }) {
   const { config, round } = match
   const count = round.hands[seat].length
-  const partner = config.playerCount === 4 && teamOf(seat) === 0
+  const partner = config.playerCount === 4 && teamOf(seat) === meOf(config) % 2
   return (
     <div className={`opp ${pos} ${active ? 'active' : ''}`}>
       <div className="nameplate">
@@ -260,10 +311,10 @@ function Pile({ ids, hidden, anim, config }: { ids: number[]; hidden: Set<number
   )
 }
 
-function TurnBanner({ g, match }: { g: ReturnType<typeof useGame>; match: MatchState }) {
+function TurnBanner({ g, match }: { g: Ctl; match: MatchState }) {
   const { round, config } = match
   if (round.phase !== 'playing') return <div className="turnline">Round over</div>
-  const mine = round.current === 0
+  const mine = round.current === meOf(config)
   return (
     <div className={`turnline ${mine ? 'mine' : ''}`}>
       {g.anim ? '…' : mine ? 'Your move' : `${seatName(config, round.current)} is thinking…`}

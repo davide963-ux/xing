@@ -16,6 +16,8 @@ export interface RulesConfig {
 }
 
 export interface GameConfig {
+  /** Display-only: whose screen this is and the seat names (set for online games). */
+  view?: { me: number; names: string[] }
   playerCount: 2 | 4
   targetScore: 51 | 101
   rules: RulesConfig

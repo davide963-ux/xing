@@ -1,9 +1,10 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
 import { chooseCard, getPublicView } from '../engine/ai'
 import type { AiLevel } from '../engine/ai'
-import { DEFAULT_CONFIG, canPlay, commitRound, newMatch, nextRound, playCard, pointsOf } from '../engine/engine'
+import { DEFAULT_CONFIG, canPlay, commitRound, newMatch, nextRound, playCard } from '../engine/engine'
 import type { GameConfig, MatchState } from '../engine/types'
-import { seatName } from './format'
+import { runPlayFx } from './playFx'
+import type { Anim, Banner } from './playFx'
 import { setSoundEnabled, sfx } from './sound'
 
 export interface Settings {
@@ -12,21 +13,7 @@ export interface Settings {
   sound: boolean
 }
 
-/** What the table shows while a move is being animated. */
-export interface Anim {
-  table: number[]
-  hidden: number[]
-  flyFrom: number | null
-  flyCard: number | null
-  sweepTo: number | null
-}
-
-export interface Banner {
-  id: number
-  kind: 'capture' | 'xing10' | 'xing20' | 'info'
-  text: string
-  sub?: string
-}
+export type { Anim, Banner }
 
 export type Modal = 'rules' | 'settings' | null
 export type Overlay = 'round' | 'winner' | null
@@ -57,9 +44,6 @@ function loadSettings(): Settings {
   }
   return DEFAULT_SETTINGS
 }
-
-const PLAY_MS = 450
-const SWEEP_MS = 700
 
 export function useGame() {
   const [settings, setSettings] = useState<Settings>(loadSettings)
@@ -139,22 +123,10 @@ export function useGame() {
       if (!m || busy.current || modalRef.current) return
       if (!canPlay(m.round, seat, cardId)) return
       busy.current = true // blocks out-of-turn / double submissions until the animation ends
-      const cfg = m.config
       const before = m.round
       const { state, event } = playCard(before, seat, cardId)
       setMatch({ ...m, round: state })
-      sfx('play')
-      setAnim({
-        table: [...before.table, cardId],
-        hidden: before.hiddenOnTable,
-        flyFrom: seat,
-        flyCard: cardId,
-        sweepTo: null,
-      })
-
-      const finish = () => {
-        setAnim(null)
-        if (event.dealtAfter) sfx('deal')
+      runPlayFx({ setAnim, showBanner, later }, before, state, event, () => {
         if (state.phase === 'finished') {
           const done = commitRound(matchRef.current!)
           setMatch(done)
@@ -165,42 +137,6 @@ export function useGame() {
           })
         } else {
           busy.current = false
-        }
-      }
-
-      later(PLAY_MS, () => {
-        const sweep = (to: number) => setAnim((a) => (a ? { ...a, sweepTo: to, flyFrom: null } : a))
-        if (event.kind === 'capture') {
-          const who = seatName(cfg, seat)
-          const pts = pointsOf(event.captured)
-          if (event.bonus === 20) {
-            showBanner({ kind: 'xing20', text: 'JACK XING! +20', sub: `${who} captured a lone jack with a jack` })
-            sfx('xing20')
-          } else if (event.bonus === 10) {
-            showBanner({ kind: 'xing10', text: 'XING! +10', sub: `${who} captured a lone card` })
-            sfx('xing10')
-          } else {
-            const n = event.captured.length
-            showBanner({
-              kind: 'capture',
-              text: `${who} captured ${n} card${n === 1 ? '' : 's'}`,
-              sub: pts > 0 ? `${pts} point${pts === 1 ? '' : 's'} in the stack` : undefined,
-            })
-            sfx('capture')
-          }
-          sweep(seat)
-          later(event.bonus ? SWEEP_MS + 500 : SWEEP_MS, finish)
-        } else if (state.leftoverTo !== null) {
-          showBanner({
-            kind: 'info',
-            text: `Last cards go to ${seatName(cfg, state.leftoverTo)}`,
-            sub: `${state.leftoverCount} left on the table (no bonus)`,
-          })
-          sfx('capture')
-          sweep(state.leftoverTo)
-          later(SWEEP_MS, finish)
-        } else {
-          finish()
         }
       })
     },

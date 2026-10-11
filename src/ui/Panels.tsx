@@ -2,7 +2,7 @@ import { useState } from 'react'
 import type { AiLevel } from '../engine/ai'
 import type { GameConfig, MatchState, RoundScore } from '../engine/types'
 import type { Settings } from './useGame'
-import { teamName } from './format'
+import { meOf, teamName } from './format'
 
 // ------------------------------------------------------------ settings form
 
@@ -88,6 +88,7 @@ export function SetupScreen({
   onChange,
   onStart,
   onRules,
+  onOnline,
   user,
   onSignOut,
 }: {
@@ -95,6 +96,7 @@ export function SetupScreen({
   onChange: (s: Settings) => void
   onStart: () => void
   onRules: () => void
+  onOnline: () => void
   user: string
   onSignOut: () => void
 }) {
@@ -111,7 +113,10 @@ export function SetupScreen({
         <SettingsForm value={settings} onChange={onChange} />
         <div className="row">
           <button className="btn primary big" onClick={onStart}>
-            Start match
+            Play vs computer
+          </button>
+          <button className="btn primary big online" onClick={onOnline}>
+            Play online
           </button>
           <button className="btn" onClick={onRules}>
             How to play
@@ -250,10 +255,13 @@ const ROWS: { label: string; get: (t: RoundScore['teams'][0]) => string | number
 export function RoundResults({
   match,
   onContinue,
+  waiting = false,
 }: {
   match: MatchState
   onContinue: () => void
+  waiting?: boolean
 }) {
+  const myTeam = meOf(match.config) % 2
   const score = match.roundHistory[match.roundHistory.length - 1]
   const cfg = match.config
   const leftover = match.round.leftoverCount
@@ -269,7 +277,7 @@ export function RoundResults({
               <tr>
                 <th></th>
                 {[0, 1].map((t) => (
-                  <th key={t} className={t === 0 ? 'me' : 'them'}>
+                  <th key={t} className={t === myTeam ? 'me' : 'them'}>
                     {teamName(cfg, t)}
                   </th>
                 ))}
@@ -297,8 +305,8 @@ export function RoundResults({
             <p className="note warn">Both sides reached {cfg.targetScore} with equal totals – another round decides it.</p>
           )}
           <div className="row">
-            <button className="btn primary big" onClick={onContinue}>
-              Next round
+            <button className="btn primary big" onClick={onContinue} disabled={waiting}>
+              {waiting ? 'Waiting for other players…' : 'Next round'}
             </button>
           </div>
         </div>
@@ -318,7 +326,7 @@ export function WinnerScreen({
 }) {
   const cfg = match.config
   const w = match.winner!
-  const humanWon = w === 0
+  const humanWon = w === meOf(cfg) % 2
   const score = match.roundHistory[match.roundHistory.length - 1]
   const xing = [0, 1].map((t) => match.roundHistory.reduce((a, r) => a + r.teams[t].xingPoints, 0))
   return (
@@ -352,6 +360,73 @@ export function WinnerScreen({
         <div className="row">
           <button className="btn primary big" onClick={onAgain}>
             Play again
+          </button>
+          <button className="btn" onClick={onMenu}>
+            Main menu
+          </button>
+        </div>
+      </div>
+    </div>
+  )
+}
+
+// ------------------------------------------------------------ online screens
+
+export function LobbyScreen({
+  phase,
+  waiting,
+  need,
+  onCancel,
+}: {
+  phase: 'searching' | 'joining'
+  waiting: number
+  need: number
+  onCancel: () => void
+}) {
+  return (
+    <div className="setup">
+      <div className="setup-card lobby">
+        <h1 className="logo">
+          XING<span>♠ ♥ ♦ ♣</span>
+        </h1>
+        <div className="spinner" aria-hidden />
+        <h2>{phase === 'joining' ? 'Match found – setting up the table…' : 'Waiting for players…'}</h2>
+        <p className="players-found">
+          {Array.from({ length: need }, (_, i) => (
+            <span key={i} className={`seatdot ${i < waiting || phase === 'joining' ? 'on' : ''}`} />
+          ))}
+        </p>
+        <p className="note">
+          {phase === 'joining'
+            ? 'Connecting…'
+            : `${Math.min(waiting, need)} of ${need} players in the queue. The game starts automatically when the table is full.`}
+        </p>
+        <div className="row">
+          <button className="btn" onClick={onCancel}>
+            Cancel
+          </button>
+        </div>
+      </div>
+    </div>
+  )
+}
+
+export function EndedScreen({
+  message,
+  onRetry,
+  onMenu,
+}: {
+  message: string | null
+  onRetry: () => void
+  onMenu: () => void
+}) {
+  return (
+    <div className="setup">
+      <div className="setup-card lobby">
+        <h2>{message ?? 'The match ended.'}</h2>
+        <div className="row">
+          <button className="btn primary" onClick={onRetry}>
+            Find another match
           </button>
           <button className="btn" onClick={onMenu}>
             Main menu

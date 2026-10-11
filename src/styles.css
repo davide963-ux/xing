@@ -1075,3 +1075,44 @@ summary {
   opacity: 0.6;
   cursor: default;
 }
+
+/* ---------- online lobby */
+.lobby {
+  text-align: center;
+}
+.lobby h2 {
+  margin: 0.5rem 0;
+}
+.spinner {
+  width: 54px;
+  height: 54px;
+  margin: 1rem auto;
+  border-radius: 50%;
+  border: 5px solid rgba(255, 255, 255, 0.2);
+  border-top-color: var(--gold);
+  animation: spin 0.9s linear infinite;
+}
+.players-found {
+  display: flex;
+  gap: 0.6rem;
+  justify-content: center;
+}
+.seatdot {
+  width: 22px;
+  height: 22px;
+  border-radius: 50%;
+  border: 2px solid rgba(255, 255, 255, 0.35);
+}
+.seatdot.on {
+  background: var(--me);
+  border-color: var(--me);
+}
+.btn.online {
+  background: linear-gradient(#8fe3c6, var(--me));
+  border-color: #2b9d78;
+}
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
+}

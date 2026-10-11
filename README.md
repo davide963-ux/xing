@@ -31,3 +31,14 @@ Notes on the implementation choices:
 - Cards captured from the table become public (revealed) at the moment of capture.
 - If nobody captured anything in a round, leftover table cards go to no one (extremely rare).
 - Settings are stored in `localStorage`; changing mode/target/variants mid-match restarts the match.
+
+## Online play
+
+"Play online" puts you in a matchmaking queue (Supabase Realtime presence, one queue per mode: 2 or 4
+players). When the table is full the earliest waiting player becomes the host: their browser runs the
+engine and sends each player a *masked* view of the match (other hands, deck order and face-down table
+cards are replaced by placeholders). Rules/target of the host's settings apply.
+
+Limitations: no database or server code is used, so a technically skilled player could in principle
+inspect the host's browser or the Realtime traffic; there is no reconnect (if anyone leaves, the match
+ends); no stats are stored. Needs login (Supabase Auth) like the rest of the game.
