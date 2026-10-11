@@ -88,11 +88,15 @@ export function SetupScreen({
   onChange,
   onStart,
   onRules,
+  user,
+  onSignOut,
 }: {
   settings: Settings
   onChange: (s: Settings) => void
   onStart: () => void
   onRules: () => void
+  user: string
+  onSignOut: () => void
 }) {
   return (
     <div className="setup">
@@ -101,6 +105,9 @@ export function SetupScreen({
           XING<span>♠ ♥ ♦ ♣</span>
         </h1>
         <p className="tagline">The Albanian card game of captures, jacks and the 10-point Xing.</p>
+        <p className="whoami">
+          Signed in as <b>{user}</b> · <button type="button" onClick={onSignOut}>Sign out</button>
+        </p>
         <SettingsForm value={settings} onChange={onChange} />
         <div className="row">
           <button className="btn primary big" onClick={onStart}>

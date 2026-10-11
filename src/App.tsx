@@ -8,8 +8,17 @@ import type { Pos } from './ui/format'
 import { useGame } from './ui/useGame'
 import type { Anim, Banner } from './ui/useGame'
 import { teamOf } from './engine/engine'
+import { AuthGate, displayName, signOut } from './auth/AuthGate'
 
 export default function App() {
+  return (
+    <AuthGate>
+      {(session) => <Game user={displayName(session)} />}
+    </AuthGate>
+  )
+}
+
+function Game({ user }: { user: string }) {
   const g = useGame()
   const { match, settings } = g
 
@@ -21,9 +30,11 @@ export default function App() {
           onChange={g.setSettings}
           onStart={() => g.startMatch(settings.config)}
           onRules={() => g.setModal('rules')}
+          user={user}
+          onSignOut={() => void signOut()}
         />
       ) : (
-        <GameView g={g} match={match} />
+        <GameView g={g} match={match} user={user} />
       )}
       {g.modal === 'rules' && <RulesModal onClose={() => g.setModal(null)} />}
       {g.modal === 'settings' && (
@@ -43,7 +54,7 @@ export default function App() {
   )
 }
 
-function GameView({ g, match }: { g: ReturnType<typeof useGame>; match: MatchState }) {
+function GameView({ g, match, user }: { g: ReturnType<typeof useGame>; match: MatchState; user: string }) {
   const { round, config } = match
   const n = config.playerCount
   const hiddenSet = useMemo(() => new Set(g.anim ? g.anim.hidden : round.hiddenOnTable), [g.anim, round.hiddenOnTable])
@@ -81,6 +92,9 @@ function GameView({ g, match }: { g: ReturnType<typeof useGame>; match: MatchSta
               title="Toggle sound"
             >
               {g.settings.sound ? '🔊' : '🔇'}
+            </button>
+            <button className="btn sm" onClick={() => void signOut()} title={`Signed in as ${user}`}>
+              Sign out
             </button>
           </div>
         </header>

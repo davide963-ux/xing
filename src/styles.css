@@ -1016,3 +1016,62 @@ summary {
     transition-duration: 0.01ms !important;
   }
 }
+
+/* ---------- auth */
+.field {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+  margin-bottom: 0.8rem;
+}
+.field span {
+  font-size: 0.8rem;
+  color: var(--muted);
+}
+.field input {
+  font: inherit;
+  padding: 0.65rem 0.8rem;
+  border-radius: 10px;
+  border: 1px solid rgba(255, 255, 255, 0.25);
+  background: rgba(0, 0, 0, 0.3);
+  color: var(--text);
+}
+.field input:focus {
+  outline: 2px solid var(--gold);
+}
+.auth-msg {
+  padding: 0.5rem 0.8rem;
+  border-radius: 8px;
+  font-size: 0.9rem;
+}
+.auth-msg.err {
+  background: rgba(198, 40, 40, 0.3);
+}
+.auth-msg.ok {
+  background: rgba(76, 201, 160, 0.25);
+}
+.auth-links {
+  display: flex;
+  justify-content: center;
+  gap: 1.2rem;
+  margin-top: 0.8rem;
+}
+.auth-links button,
+.whoami button {
+  background: none;
+  border: 0;
+  color: var(--gold);
+  cursor: pointer;
+  text-decoration: underline;
+  font-size: 0.9rem;
+}
+.whoami {
+  text-align: center;
+  margin: -0.6rem 0 1rem;
+  font-size: 0.9rem;
+  color: var(--muted);
+}
+.btn:disabled {
+  opacity: 0.6;
+  cursor: default;
+}
