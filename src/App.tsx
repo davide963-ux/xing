@@ -1,4 +1,4 @@
-import { useMemo } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import { cardLabel } from './engine/cards'
 import type { GameConfig, MatchState } from './engine/types'
 import { Card } from './ui/Card'
@@ -13,6 +13,8 @@ import { teamOf } from './engine/engine'
 import { AuthGate, displayName, signOut } from './auth/AuthGate'
 import { sq } from './i18n/sq'
 import { DailyCard, DailyResultModal } from './ui/Daily'
+import { LeaderboardModal, ProfileModal } from './ui/Profile'
+import { flushOutbox } from './stats/api'
 import type { DailyResult } from './engine/daily'
 
 export default function App() {
@@ -44,6 +46,10 @@ export interface Ctl {
 
 function Game({ user }: { user: string }) {
   const off = useGame()
+  const [panel, setPanel] = useState<'profile' | 'board' | null>(null)
+  useEffect(() => {
+    void flushOutbox() // retry results that could not be sent earlier
+  }, [])
   const on = useOnline(user, off.settings, off.setSettings)
   const { settings } = off
 
@@ -78,6 +84,8 @@ function Game({ user }: { user: string }) {
         onChange={off.setSettings}
         onStart={() => off.startMatch(settings.config)}
         onOnline={() => on.search(settings.config.playerCount)}
+        onProfile={() => setPanel('profile')}
+        onBoard={() => setPanel('board')}
         onRules={() => off.setModal('rules')}
         extra={<DailyCard dayKey={off.dayKey} result={off.dailyResult} onPlay={off.startDaily} />}
         user={user}
@@ -91,6 +99,8 @@ function Game({ user }: { user: string }) {
   return (
     <div className="app">
       {screen}
+      {panel === 'profile' && <ProfileModal onClose={() => setPanel(null)} />}
+      {panel === 'board' && <LeaderboardModal onClose={() => setPanel(null)} />}
       {g.modal === 'rules' && <RulesModal onClose={() => g.setModal(null)} />}
       {g.modal === 'settings' && !g.online && (
         <SettingsModal

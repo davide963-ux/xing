@@ -1331,3 +1331,123 @@ a.btn {
   text-decoration: none;
   display: inline-block;
 }
+
+/* ---------- profile & leaderboard */
+.nav-row {
+  margin: 0 0 1rem;
+}
+.profile .pname {
+  margin: 0;
+  font-size: 1.4rem;
+  color: var(--gold);
+}
+.prating {
+  margin: 0.2rem 0 0.8rem;
+  color: var(--muted);
+}
+.prating b {
+  color: var(--text);
+  font-size: 1.2rem;
+}
+.stat-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(110px, 1fr));
+  gap: 0.5rem;
+  margin: 0.6rem 0 1rem;
+}
+.stat {
+  background: rgba(255, 255, 255, 0.07);
+  border-radius: 12px;
+  padding: 0.5rem 0.6rem;
+  text-align: center;
+}
+.stat b {
+  display: block;
+  font-size: 1.4rem;
+}
+.stat span {
+  font-size: 0.72rem;
+  color: var(--muted);
+}
+.profile h3 {
+  margin: 1rem 0 0.5rem;
+  color: var(--gold);
+}
+.profile h3 small {
+  color: var(--muted);
+  font-weight: 400;
+}
+.ach-grid {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: 0.5rem;
+}
+.ach-grid li {
+  display: flex;
+  gap: 0.7rem;
+  align-items: center;
+  background: rgba(255, 255, 255, 0.06);
+  border-radius: 12px;
+  padding: 0.5rem 0.7rem;
+}
+.ach-grid li.locked {
+  opacity: 0.5;
+}
+.ach-grid li.got {
+  border: 1px solid var(--gold);
+  background: rgba(242, 193, 78, 0.1);
+}
+.aicon {
+  font-size: 1.6rem;
+}
+.ach-grid b {
+  display: block;
+  font-size: 0.95rem;
+}
+.ach-grid small {
+  color: var(--muted);
+}
+.tabs {
+  display: flex;
+  gap: 0.4rem;
+  margin-bottom: 0.8rem;
+}
+.tabs button {
+  flex: 1;
+  padding: 0.5rem;
+  border-radius: 10px;
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  background: transparent;
+  cursor: pointer;
+}
+.tabs button.on {
+  background: var(--gold);
+  color: #2b2100;
+  font-weight: 700;
+}
+.board-table {
+  width: 100%;
+  border-collapse: collapse;
+}
+.board-table th,
+.board-table td {
+  padding: 0.4rem 0.4rem;
+  text-align: center;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+}
+.board-table th:nth-child(2),
+.board-table td:nth-child(2) {
+  text-align: left;
+}
+.board-table th {
+  color: var(--muted);
+  font-size: 0.75rem;
+  font-weight: 600;
+}
+.board-table tr.mine td {
+  background: rgba(242, 193, 78, 0.15);
+  font-weight: 700;
+}

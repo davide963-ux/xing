@@ -5,6 +5,7 @@ import { DAILY_CONFIG, createDailyRound, dailyAiRng, dailyResultOf, dateKey } fr
 import type { DailyResult } from '../engine/daily'
 import { DEFAULT_CONFIG, canPlay, commitRound, newMatch, nextRound, playCard } from '../engine/engine'
 import type { GameConfig, MatchState } from '../engine/types'
+import { submit, xingTotals } from '../stats/api'
 import { loadDaily, saveDaily } from './dailyStore'
 import { runPlayFx } from './playFx'
 import type { Anim, Banner } from './playFx'
@@ -165,13 +166,41 @@ export function useGame() {
           const done = commitRound(matchRef.current!)
           setMatch(done)
           if (daily.current) {
+            const first = !loadDaily(daily.current.key)
             const saved = saveDaily(dailyResultOf(daily.current.key, state))
             setDailyResult(saved)
+            if (first) {
+              void submit({
+                fn: 'record_solo',
+                args: {
+                  p_mode: 'daily',
+                  p_outcome: saved.outcome,
+                  p_rounds: 1,
+                  p_xing10: saved.xing10,
+                  p_xing20: saved.xing20,
+                  p_daily_date: saved.key,
+                },
+              })
+            }
             later(450, () => {
               sfx(saved.outcome === 'win' ? 'win' : saved.outcome === 'loss' ? 'lose' : 'round')
               setOverlay('daily')
             })
             return
+          }
+          if (done.winner !== null) {
+            const x = xingTotals(done.roundHistory, 0)
+            void submit({
+              fn: 'record_solo',
+              args: {
+                p_mode: 'computer',
+                p_outcome: done.winner === 0 ? 'win' : 'loss',
+                p_rounds: done.roundHistory.length,
+                p_xing10: x.x10,
+                p_xing20: x.x20,
+                p_daily_date: null,
+              },
+            })
           }
           later(450, () => {
             if (done.winner !== null) sfx(done.winner === 0 ? 'win' : 'lose')

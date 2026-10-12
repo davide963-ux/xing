@@ -4,6 +4,7 @@ import { supabase } from '../auth/supabase'
 import { canPlay, commitRound, newMatch, nextRound, playCard } from '../engine/engine'
 import type { MatchState } from '../engine/types'
 import { sq } from '../i18n/sq'
+import { submit, xingTotals } from '../stats/api'
 import { runPlayFx } from '../ui/playFx'
 import type { Anim, Banner } from '../ui/playFx'
 import { sfx } from '../ui/sound'
@@ -76,6 +77,8 @@ export function useOnline(name: string, settings: Settings, setSettings: (s: Set
   const processing = useRef(false)
   const pending = useRef(false)
   const lastSeq = useRef(-1)
+  const roomId = useRef<string | null>(null)
+  const reported = useRef(false)
   const generation = useRef(0) // invalidates callbacks of an abandoned search/match
 
   const setPhaseBoth = useCallback((p: OnlinePhase) => {
@@ -118,6 +121,8 @@ export function useOnline(name: string, settings: Settings, setSettings: (s: Set
     processing.current = false
     pending.current = false
     lastSeq.current = -1
+    roomId.current = null
+    reported.current = false
     setAnim(null)
     setBanner(null)
     setOverlay(null)
@@ -166,6 +171,25 @@ export function useOnline(name: string, settings: Settings, setSettings: (s: Set
     )
     runPlayFx({ setAnim, showBanner, later }, cur.round, next.round, p.event, () => {
       setMatch(next)
+      if (next.winner !== null && roomId.current && !reported.current) {
+        // every player reports the final score; the server only counts it when all reports agree
+        reported.current = true
+        const myTeam = (next.config.view?.me ?? 0) % 2
+        const x = xingTotals(next.roundHistory, myTeam)
+        void submit({
+          fn: 'report_online',
+          args: {
+            p_match_id: roomId.current,
+            p_players: next.config.playerCount,
+            p_my_team: myTeam,
+            p_score0: next.scores[0],
+            p_score1: next.scores[1],
+            p_rounds: next.roundHistory.length,
+            p_xing10: x.x10,
+            p_xing20: x.x20,
+          },
+        })
+      }
       if (next.round.phase === 'finished') {
         later(450, () => {
           const myTeam = (next.config.view?.me ?? 0) % 2
@@ -273,6 +297,7 @@ export function useOnline(name: string, settings: Settings, setSettings: (s: Set
         const seat = players.findIndex((p) => p.id === id)
         const isHost = seat === 0
         roomPlayers.current = players
+        roomId.current = offer.roomId
         setPhaseBoth('joining')
         void lobby.untrack()
         void supabase.removeChannel(lobby)

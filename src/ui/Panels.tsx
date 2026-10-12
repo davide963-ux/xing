@@ -85,6 +85,8 @@ export function SetupScreen({
   onStart,
   onRules,
   onOnline,
+  onProfile,
+  onBoard,
   user,
   onSignOut,
   extra,
@@ -94,6 +96,8 @@ export function SetupScreen({
   onStart: () => void
   onRules: () => void
   onOnline: () => void
+  onProfile: () => void
+  onBoard: () => void
   user: string
   onSignOut: () => void
   extra?: React.ReactNode
@@ -111,6 +115,14 @@ export function SetupScreen({
             {sq.common.signOut}
           </button>
         </p>
+        <div className="row nav-row">
+          <button className="btn" onClick={onProfile}>
+            👤 {sq.profile.menu}
+          </button>
+          <button className="btn" onClick={onBoard}>
+            🏆 {sq.board.menu}
+          </button>
+        </div>
         {extra}
         <SettingsForm value={settings} onChange={onChange} />
         <div className="row">
