@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react'
 import { sq } from '../i18n/sq'
 import { fetchLeaderboard, fetchMyStats } from '../stats/api'
 import type { BoardRow, PlayerStats } from '../stats/api'
+import { Badge } from './Icon'
 import { Modal } from './Panels'
 
 type Load<T> = { state: 'loading' } | { state: 'error' } | { state: 'ok'; data: T }
@@ -75,7 +76,7 @@ function ProfileBody({ s }: { s: PlayerStats }) {
       <ul className="ach-grid">
         {ids.map((id) => (
           <li key={id} className={got.has(id) ? 'got' : 'locked'}>
-            <span className="aicon">{got.has(id) ? sq.ach[id].icon : '🔒'}</span>
+            <Badge id={id} unlocked={got.has(id)} />
             <div>
               <b>{sq.ach[id].title}</b>
               <small>{sq.ach[id].text}</small>

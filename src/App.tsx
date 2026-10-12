@@ -13,6 +13,7 @@ import { teamOf } from './engine/engine'
 import { AuthGate, displayName, signOut } from './auth/AuthGate'
 import { sq } from './i18n/sq'
 import { DailyCard, DailyResultModal } from './ui/Daily'
+import { Icon, IconDefs } from './ui/Icon'
 import { LeaderboardModal, ProfileModal } from './ui/Profile'
 import { flushOutbox } from './stats/api'
 import type { DailyResult } from './engine/daily'
@@ -98,6 +99,7 @@ function Game({ user }: { user: string }) {
 
   return (
     <div className="app">
+      <IconDefs />
       {screen}
       {panel === 'profile' && <ProfileModal onClose={() => setPanel(null)} />}
       {panel === 'board' && <LeaderboardModal onClose={() => setPanel(null)} />}
@@ -163,7 +165,7 @@ function GameView({ g, match, user }: { g: Ctl; match: MatchState; user: string 
               onClick={() => g.setSettings({ ...g.settings, sound: !g.settings.sound })}
               title={sq.game.toggleSound}
             >
-              {g.settings.sound ? '🔊' : '🔇'}
+              <Icon name={g.settings.sound ? 'soundOn' : 'soundOff'} size={18} />
             </button>
             <button className="btn sm" onClick={() => void signOut()} title={sq.setup.signedIn(user)}>
               {sq.common.signOut}
@@ -261,9 +263,11 @@ function Scoreboard({ match }: { match: MatchState }) {
             <div className="tname">{teamName(config, t)}</div>
             <div className="tscore">{match.scores[t]}</div>
             <div className="tmeta">
-              <span title={sq.game.cardsTaken}>🂠 {round.captured[t].length}</span>
+              <span title={sq.game.cardsTaken}>
+                <Icon name="cards" size={14} /> {round.captured[t].length}
+              </span>
               <span title={sq.game.xingTitle}>
-                ✕ {past10}×10{config.rules.jackXing20 ? ` · ${past20}×20` : ''}
+                <Icon name="spark" size={13} /> {past10}×10{config.rules.jackXing20 ? ` · ${past20}×20` : ''}
               </span>
             </div>
           </div>

@@ -2,6 +2,7 @@ import { useState } from 'react'
 import { challengeNumber, timeToNext } from '../engine/daily'
 import type { DailyResult } from '../engine/daily'
 import { sq } from '../i18n/sq'
+import { Icon } from './Icon'
 import { Modal } from './Panels'
 
 export const shareTextOf = (r: DailyResult): string =>
@@ -49,7 +50,9 @@ function ResultBody({ r }: { r: DailyResult }) {
 export function DailyCard({ dayKey, result, onPlay }: { dayKey: string; result: DailyResult | null; onPlay: () => void }) {
   return (
     <section className="daily-card">
-      <h2>🗓️ {sq.daily.title(challengeNumber(dayKey))}</h2>
+      <h2>
+        <Icon name="calendar" size={22} className="h-ico" /> {sq.daily.title(challengeNumber(dayKey))}
+      </h2>
       {result ? (
         <>
           <p className="note">{sq.daily.yourResult}</p>

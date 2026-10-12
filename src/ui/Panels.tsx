@@ -2,6 +2,7 @@ import { useState } from 'react'
 import type { AiLevel } from '../engine/ai'
 import type { GameConfig, MatchState, RoundScore } from '../engine/types'
 import { sq } from '../i18n/sq'
+import { Icon, SuitRow } from './Icon'
 import type { Settings } from './useGame'
 import { meOf, teamName } from './format'
 
@@ -106,7 +107,7 @@ export function SetupScreen({
     <div className="setup">
       <div className="setup-card">
         <h1 className="logo">
-          XING<span>♠ ♥ ♦ ♣</span>
+          XING<span><SuitRow /></span>
         </h1>
         <p className="tagline">{sq.setup.tagline}</p>
         <p className="whoami">
@@ -117,10 +118,10 @@ export function SetupScreen({
         </p>
         <div className="row nav-row">
           <button className="btn" onClick={onProfile}>
-            👤 {sq.profile.menu}
+            <Icon name="user" size={18} /> {sq.profile.menu}
           </button>
           <button className="btn" onClick={onBoard}>
-            🏆 {sq.board.menu}
+            <Icon name="trophy" size={18} /> {sq.board.menu}
           </button>
         </div>
         {extra}
@@ -338,7 +339,9 @@ export function WinnerScreen({
   return (
     <div className="backdrop win">
       <div className="modal winner" role="dialog" aria-label={sq.results.win}>
-        <div className="trophy">{humanWon ? '🏆' : '🃏'}</div>
+        <div className={`trophy ${humanWon ? 'won' : 'lost'}`}>
+          <Icon name={humanWon ? 'trophy' : 'cards'} size={96} />
+        </div>
         <h2>{humanWon ? sq.results.win : sq.results.teamWins(teamName(cfg, w), cfg.playerCount === 2)}</h2>
         <p className="big-score">
           <span className={w === 0 ? 'hi' : ''}>{match.scores[0]}</span>
@@ -392,7 +395,7 @@ export function LobbyScreen({
     <div className="setup">
       <div className="setup-card lobby">
         <h1 className="logo">
-          XING<span>♠ ♥ ♦ ♣</span>
+          XING<span><SuitRow /></span>
         </h1>
         <div className="spinner" aria-hidden />
         <h2>{phase === 'joining' ? sq.online.found : sq.online.waiting}</h2>

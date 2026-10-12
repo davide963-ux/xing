@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react'
 import type { ReactNode } from 'react'
 import type { Session } from '@supabase/supabase-js'
 import { sq } from '../i18n/sq'
+import { SuitRow } from '../ui/Icon'
 import { Landing } from '../ui/Landing'
 import { supabase } from './supabase'
 
@@ -106,7 +107,7 @@ function LoginPage({ initial, onHome }: { initial: Mode; onHome: () => void }) {
     <div className="setup">
       <form className="setup-card auth" onSubmit={submit}>
         <h1 className="logo">
-          XING<span>♠ ♥ ♦ ♣</span>
+          XING<span><SuitRow /></span>
         </h1>
         <p className="tagline">{mode === 'signin' ? a.signinTitle : mode === 'signup' ? a.signupTitle : a.resetTitle}</p>
 

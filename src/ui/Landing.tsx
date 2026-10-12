@@ -1,6 +1,8 @@
 import { useRef, useState } from 'react'
 import { sq } from '../i18n/sq'
 import { Card } from './Card'
+import { Icon } from './Icon'
+import type { IconName } from './Icon'
 import { RulesBody } from './Panels'
 
 // Face-up cards for the hero: ace of spades, jack of diamonds, 10 of diamonds, 2 of clubs (the point cards).
@@ -40,7 +42,9 @@ export function Landing({ onPlay, onLogin }: { onPlay: () => void; onLogin: () =
       <section className="lp-features">
         {l.features.map((f) => (
           <div className="lp-feature" key={f.title}>
-            <div className="ico">{f.icon}</div>
+            <div className="ico">
+              <Icon name={f.icon as IconName} size={34} />
+            </div>
             <h3>{f.title}</h3>
             <p>{f.text}</p>
           </div>
