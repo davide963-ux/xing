@@ -2,8 +2,6 @@ import { cardLabel } from '../engine/cards'
 import type { GameConfig, PlayEvent } from '../engine/types'
 import { ME, sq } from '../i18n/sq'
 
-const NAMES_4 = [ME, 'Drita', 'Arben', 'Ilir']
-const NAMES_2 = [ME, 'Kompjuteri']
 
 /** The seat shown at the bottom of the screen (always 0 offline). */
 export const meOf = (config: GameConfig): number => config.view?.me ?? 0
@@ -12,7 +10,8 @@ export const isMe = (config: GameConfig, seat: number): boolean => seat === meOf
 
 export const seatName = (config: GameConfig, seat: number): string => {
   if (isMe(config, seat)) return ME
-  return config.view?.names[seat] ?? (config.playerCount === 2 ? NAMES_2 : NAMES_4)[seat]
+  const n = sq.names
+  return config.view?.names[seat] ?? (config.playerCount === 2 ? [ME, n.computer] : [ME, n.bot1, n.bot2, n.bot3])[seat]
 }
 
 export const teamName = (config: GameConfig, team: number): string => {

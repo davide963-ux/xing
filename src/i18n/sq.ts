@@ -1,14 +1,24 @@
-/** All user-facing text (Albanian). The game is Albanian-only; keep wording in one place. */
+/**
+ * All user-facing text (Albanian). The game is Albanian-only; keep wording in one place.
+ * Every string here can be overridden at runtime from the admin dashboard (see texts.ts);
+ * sentences with variables are `tpl(...)` templates (syntax in tpl.ts).
+ */
+import { tpl } from './tpl'
 
 /** Label used for the local player ("You"). */
 export const ME = 'Ti'
-
-const plural = (n: number, one: string, many: string) => (n === 1 ? one : many)
 
 export const sq = {
   meta: {
     title: 'XING – Luaj Xing me nacut dhe cogat',
     description: 'Loja e njohur shqiptare me letra, tani online. Luaj Xing me nacut dhe cogat, 1 kundër 1 ose 2 kundër 2.',
+  },
+
+  names: {
+    computer: 'Kompjuteri',
+    bot1: 'Drita',
+    bot2: 'Arben',
+    bot3: 'Ilir',
   },
 
   common: {
@@ -72,12 +82,12 @@ export const sq = {
 
   setup: {
     tagline: 'Loja e njohur shqiptare me letra: kap letrat, përdor Janin dhe bëj Xing.',
-    signedIn: (name: string) => `I kyçur si ${name}`,
+    signedIn: tpl<[string]>('I kyçur si {name}', ['name']),
     mode: 'Lloji i lojës',
     mode2: 'Ti kundër kompjuterit',
     mode4: 'Ti & Arben kundër Drita & Ilir',
     playTo: 'Luaj deri në',
-    points: (n: number) => `${n} pikë`,
+    points: tpl<[number]>('{n} pikë', ['n']),
     variants: 'Variante të rregullave',
     jackXing: 'Xing me Jan mbi Jan = 20 pikë',
     jackXingHint: 'Një Jan i vetëm që kapet me një Jan tjetër. Nëse është i fikur, është kapje e zakonshme.',
@@ -100,56 +110,58 @@ export const sq = {
     toggleSound: 'Ndez/fik zërin',
     restartConfirm: 'Të rifillosh lojën? Pikët aktuale do të humbasin.',
     leaveConfirm: 'Të largohesh nga loja online?',
-    round: (n: number) => `Raundi ${n}`,
-    to: (n: number) => `deri në ${n}`,
+    round: tpl<[number]>('Raundi {n}', ['n']),
+    to: tpl<[number]>('deri në {n}', ['n']),
     cardsTaken: 'Letra të marra këtë raund',
     xingTitle: 'Bonuse Xing (×10 / ×20) në këtë lojë',
     inDeck: 'në pako',
-    dealer: (name: string) => `Ndan letrat: ${name}`,
-    withPartner: (name: string) => `(me ${name})`,
+    dealer: tpl<[string]>('Ndan letrat: {name}', ['name']),
+    withPartner: tpl<[string]>('(me {name})', ['name']),
     partner: '(partneri)',
     yourTurnPick: 'Radha jote – zgjidh një letër',
     yourMove: 'Radha jote',
-    thinking: (name: string) => `${name} po mendon…`,
+    thinking: tpl<[string]>('{name} po mendon…', ['name']),
     roundOver: 'Raundi mbaroi',
     empty: 'Bosh',
-    onTable: (n: number) => `${plural(n, 'letër', 'letra')} në tavolinë`,
+    onTable: tpl<[number]>('{n=1?letër|letra} në tavolinë', ['n']),
     top: 'sipër',
     xingChance: 'Mundësi për Xing!',
     history: 'Historia e lëvizjeve',
-    roundBegins: (n: number) => `Raundi ${n} fillon…`,
+    roundBegins: tpl<[number]>('Raundi {n} fillon…', ['n']),
     dealtNote: 'U ndanë letra të reja',
     centralStack: 'Pirgu në qendër',
     faceDown: 'letër e kthyer',
   },
 
   ev: {
-    // verb forms: [ti, ai/ajo]
-    playedEmpty: (who: string, you: boolean, card: string) =>
-      `${who} ${you ? 'luajte' : 'luajti'} ${card} në tavolinë bosh`,
-    played: (who: string, you: boolean, card: string) => `${who} ${you ? 'luajte' : 'luajti'} ${card}`,
-    jackXing: (who: string, you: boolean, card: string) =>
-      `${who} ${you ? 'bëre' : 'bëri'} XING me Jan (${card}): +20!`,
-    xing: (who: string, you: boolean, card: string) => `${who} ${you ? 'bëre' : 'bëri'} XING me ${card}: +10!`,
-    tookStack: (who: string, you: boolean, card: string, n: number) =>
-      `${who} ${you ? 'more' : 'mori'} pirgun me ${card} dhe ${you ? 'kape' : 'kapi'} ${n} ${plural(n, 'letër', 'letra')}`,
-    matched: (who: string, you: boolean, card: string, n: number) =>
-      `${who} ${you ? 'përputhe' : 'përputhi'} me ${card} dhe ${you ? 'kape' : 'kapi'} ${n} ${plural(n, 'letër', 'letra')}`,
+    // arguments: who = name, you = true when the player is the viewer (changes the verb form), card, n = cards
+    playedEmpty: tpl<[string, boolean, string]>('{who} {you?luajte|luajti} {card} në tavolinë bosh', ['who', 'you', 'card']),
+    played: tpl<[string, boolean, string]>('{who} {you?luajte|luajti} {card}', ['who', 'you', 'card']),
+    jackXing: tpl<[string, boolean, string]>('{who} {you?bëre|bëri} XING me Jan ({card}): +20!', ['who', 'you', 'card']),
+    xing: tpl<[string, boolean, string]>('{who} {you?bëre|bëri} XING me {card}: +10!', ['who', 'you', 'card']),
+    tookStack: tpl<[string, boolean, string, number]>(
+      '{who} {you?more|mori} pirgun me {card} dhe {you?kape|kapi} {n} {n=1?letër|letra}',
+      ['who', 'you', 'card', 'n'],
+    ),
+    matched: tpl<[string, boolean, string, number]>(
+      '{who} {you?përputhe|përputhi} me {card} dhe {you?kape|kapi} {n} {n=1?letër|letra}',
+      ['who', 'you', 'card', 'n'],
+    ),
   },
 
   fx: {
     jackXingTitle: 'XING ME JAN! +20',
-    jackXingSub: (who: string) => `${who} kapi një Jan të vetëm me Jan`,
+    jackXingSub: tpl<[string, boolean]>('{who} {you?kape|kapi} një Jan të vetëm me Jan', ['who', 'you']),
     xingTitle: 'XING! +10',
-    xingSub: (who: string) => `${who} kapi një letër të vetme`,
-    captured: (who: string, n: number) => `${who} kapi ${n} ${plural(n, 'letër', 'letra')}`,
-    pointsInStack: (n: number) => `${n} ${plural(n, 'pikë', 'pikë')} në pirg`,
-    lastCards: (who: string) => `Letrat e fundit shkojnë te ${who}`,
-    lastCardsSub: (n: number) => `${n} ${plural(n, 'letër mbeti', 'letra mbetën')} në tavolinë (pa bonus)`,
+    xingSub: tpl<[string, boolean]>('{who} {you?kape|kapi} një letër të vetme', ['who', 'you']),
+    captured: tpl<[string, boolean, number]>('{who} {you?kape|kapi} {n} {n=1?letër|letra}', ['who', 'you', 'n']),
+    pointsInStack: tpl<[number]>('{n} pikë në pirg', ['n']),
+    lastCards: tpl<[string, boolean]>('Letrat e fundit shkojnë te {you?ty|{who}}', ['who', 'you']),
+    lastCardsSub: tpl<[number]>('{n} {n=1?letër mbeti|letra mbetën} në tavolinë (pa bonus)', ['n']),
   },
 
   results: {
-    title: (n: number) => `Rezultatet e raundit ${n}`,
+    title: tpl<[number]>('Rezultatet e raundit {n}', ['n']),
     rows: {
       cards: 'Letra të marra',
       aces: 'Asat',
@@ -162,15 +174,17 @@ export const sq = {
       xing20: 'Xing me Jan × 20',
       total: 'Totali i raundit',
     },
-    match: (target: number) => `Pikët e lojës (${target})`,
-    leftover: (n: number) => `${n} letra mbetën në tavolinë dhe shkuan te kapësi i fundit (pa bonus).`,
-    tie: (target: number) => `Të dyja anët arritën ${target} me pikë të barabarta – një raund tjetër vendos fituesin.`,
+    match: tpl<[number]>('Pikët e lojës ({target})', ['target']),
+    leftover: tpl<[number]>('{n} letra mbetën në tavolinë dhe shkuan te kapësi i fundit (pa bonus).', ['n']),
+    tie: tpl<[number]>('Të dyja anët arritën {target} me pikë të barabarta – një raund tjetër vendos fituesin.', ['target']),
     next: 'Raundi tjetër',
     waiting: 'Po pritet për lojtarët e tjerë…',
     win: 'Fitove!',
-    teamWins: (name: string, singular: boolean) => `${name} ${singular ? 'fiton' : 'fitojnë'}`,
-    summary: (a: string, b: string, rounds: number, x0: number, x1: number) =>
-      `${a} kundër ${b} · ${rounds} ${plural(rounds, 'raund', 'raunde')} · pikët Xing ${x0} – ${x1}`,
+    teamWins: tpl<[string, boolean]>('{name} {single?fiton|fitojnë}', ['name', 'single']),
+    summary: tpl<[string, string, number, number, number]>(
+      '{a} kundër {b} · {rounds} {rounds=1?raund|raunde} · pikët Xing {x0} – {x1}',
+      ['a', 'b', 'rounds', 'x0', 'x1'],
+    ),
     finalBreakdown: 'Përmbledhja e raundit të fundit',
     again: 'Luaj përsëri',
     menu: 'Menyja kryesore',
@@ -180,8 +194,7 @@ export const sq = {
     waiting: 'Po pritet për lojtarët…',
     found: 'U gjet loja – po përgatitet tavolina…',
     connecting: 'Po lidhet…',
-    queue: (have: number, need: number) =>
-      `${have} nga ${need} lojtarë në radhë. Loja nis vetë kur tavolina mbushet.`,
+    queue: tpl<[number, number]>('{have} nga {need} lojtarë në radhë. Loja nis vetë kur tavolina mbushet.', ['have', 'need']),
     left: 'Një lojtar u largua nga loja.',
     noServer: 'Nuk u lidh me serverin. Kontrollo internetin dhe provo përsëri.',
     another: 'Gjej një lojë tjetër',
@@ -189,21 +202,27 @@ export const sq = {
 
   daily: {
     name: 'Sfida e Ditës',
-    title: (n: number) => `Sfida e Ditës #${n}`,
+    title: tpl<[number]>('Sfida e Ditës #{n}', ['n']),
     blurb: 'E njëjta ndarje për të gjithë sot. Një raund kundër kompjuterit – sa pikë bën?',
     play: 'Luaj sfidën',
     yourResult: 'Rezultati yt sot',
-    next: (h: number, m: number) => `Sfida e re pas ${h} orë e ${m} min`,
+    next: tpl<[number, number]>('Sfida e re pas {h} orë e {m} min', ['h', 'm']),
     win: 'Fitove!',
     loss: 'Humbe këtë herë',
     tie: 'Barazim',
-    xingLine: (x10: number, x20: number) =>
-      x10 + x20 === 0 ? 'Pa Xing' : `Xing ×${x10}${x20 ? ` · Xing me Jan ×${x20}` : ''}`,
-    shareText: (n: number, you: number, cpu: number, outcome: 'win' | 'loss' | 'tie', xing: string) =>
-      `XING · Sfida e Ditës #${n}
-Ti ${you} – ${cpu} Kompjuteri ${outcome === 'win' ? '✅' : outcome === 'loss' ? '❌' : '🤝'}
-${xing}
-luajxing.com`,
+    noXing: 'Pa Xing',
+    xingCount: tpl<[number]>('Xing ×{x10}', ['x10']),
+    jackCount: tpl<[number]>(' · Xing me Jan ×{x20}', ['x20']),
+    share: tpl<[number, number, number, string, string]>(
+      'XING · Sfida e Ditës #{n}\nTi {you} – {cpu} Kompjuteri {emoji}\n{xing}\nluajxing.com',
+      ['n', 'you', 'cpu', 'emoji', 'xing'],
+    ),
+    xingLine(x10: number, x20: number): string {
+      return x10 + x20 === 0 ? this.noXing : this.xingCount(x10) + (x20 ? this.jackCount(x20) : '')
+    },
+    shareText(n: number, you: number, cpu: number, outcome: 'win' | 'loss' | 'tie', xing: string): string {
+      return this.share(n, you, cpu, outcome === 'win' ? '✅' : outcome === 'loss' ? '❌' : '🤝', xing)
+    },
     whatsapp: 'Ndaj në WhatsApp',
     copy: 'Kopjo',
     copied: 'U kopjua ✓',
@@ -233,7 +252,7 @@ luajxing.com`,
       dailyStreak: 'Ditë radhazi',
     },
     achievements: 'Arritjet',
-    unlocked: (a: number, b: number) => `${a} nga ${b}`,
+    unlocked: tpl<[number, number]>('{a} nga {b}', ['a', 'b']),
   },
 
   board: {

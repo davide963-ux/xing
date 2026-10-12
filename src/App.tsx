@@ -16,9 +16,23 @@ import { DailyCard, DailyResultModal } from './ui/Daily'
 import { Icon, IconDefs } from './ui/Icon'
 import { LeaderboardModal, ProfileModal } from './ui/Profile'
 import { flushOutbox } from './stats/api'
+import { AdminPage } from './admin/Admin'
+import { checkAdmin, fetchOverrides } from './admin/api'
+import { applyOverrides, cacheOverrides, useTextsVersion } from './i18n/texts'
 import type { DailyResult } from './engine/daily'
 
 export default function App() {
+  useTextsVersion() // re-render everything when the wording changes
+  useEffect(() => {
+    fetchOverrides()
+      .then((o) => {
+        applyOverrides(o)
+        cacheOverrides()
+      })
+      .catch(() => {
+        /* offline: keep the cached / built-in wording */
+      })
+  }, [])
   return (
     <AuthGate>
       {(session) => <Game user={displayName(session)} />}
@@ -48,6 +62,16 @@ export interface Ctl {
 function Game({ user }: { user: string }) {
   const off = useGame()
   const [panel, setPanel] = useState<'profile' | 'board' | null>(null)
+  const [admin, setAdmin] = useState(false)
+  const [hash, setHash] = useState(location.hash)
+  useEffect(() => {
+    const on = () => setHash(location.hash)
+    window.addEventListener('hashchange', on)
+    return () => window.removeEventListener('hashchange', on)
+  }, [])
+  useEffect(() => {
+    void checkAdmin().then(setAdmin)
+  }, [])
   useEffect(() => {
     void flushOutbox() // retry results that could not be sent earlier
   }, [])
@@ -74,7 +98,9 @@ function Game({ user }: { user: string }) {
   const { match } = g
 
   let screen
-  if (on.phase === 'searching' || on.phase === 'joining') {
+  if (hash === '#admin') {
+    screen = <AdminPage onExit={() => (location.hash = '')} />
+  } else if (on.phase === 'searching' || on.phase === 'joining') {
     screen = <LobbyScreen phase={on.phase} waiting={on.waiting} need={on.wantPlayers} onCancel={on.leave} />
   } else if (on.phase === 'ended') {
     screen = <EndedScreen message={on.endMsg} onRetry={() => on.search(on.wantPlayers)} onMenu={on.leave} />
@@ -87,6 +113,7 @@ function Game({ user }: { user: string }) {
         onOnline={() => on.search(settings.config.playerCount)}
         onProfile={() => setPanel('profile')}
         onBoard={() => setPanel('board')}
+        onAdmin={admin ? () => (location.hash = '#admin') : undefined}
         onRules={() => off.setModal('rules')}
         extra={<DailyCard dayKey={off.dayKey} result={off.dailyResult} onPlay={off.startDaily} />}
         user={user}

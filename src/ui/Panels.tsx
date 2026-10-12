@@ -88,6 +88,7 @@ export function SetupScreen({
   onOnline,
   onProfile,
   onBoard,
+  onAdmin,
   user,
   onSignOut,
   extra,
@@ -99,6 +100,7 @@ export function SetupScreen({
   onOnline: () => void
   onProfile: () => void
   onBoard: () => void
+  onAdmin?: () => void
   user: string
   onSignOut: () => void
   extra?: React.ReactNode
@@ -123,6 +125,11 @@ export function SetupScreen({
           <button className="btn" onClick={onBoard}>
             <Icon name="trophy" size={18} /> {sq.board.menu}
           </button>
+          {onAdmin && (
+            <button className="btn" onClick={onAdmin}>
+              <Icon name="shield" size={18} /> Admin
+            </button>
+          )}
         </div>
         {extra}
         <SettingsForm value={settings} onChange={onChange} />
@@ -160,8 +167,14 @@ export function Modal({ title, onClose, children }: { title: string; onClose: ()
   )
 }
 
-/** Static, trusted strings from `sq` only (may contain <b>). */
-const Rich = ({ html }: { html: string }) => <span dangerouslySetInnerHTML={{ __html: html }} />
+/** Texts may be edited by admins, so everything is escaped except <b> and </b>. */
+const escapeHtml = (s: string) =>
+  s
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/&lt;(\/?)b&gt;/g, '<$1b>')
+const Rich = ({ html }: { html: string }) => <span dangerouslySetInnerHTML={{ __html: escapeHtml(html) }} />
 
 export function RulesBody() {
   return (
