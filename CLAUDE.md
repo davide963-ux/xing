@@ -29,6 +29,6 @@ Deployed on Vercel from `main` of github.com/davide963-ux/xing. Auth + online pl
 - Keep changes small; match surrounding style; no new dependencies without a reason.
 
 ## Project helpers (in `.claude/`)
-- Skills: `/brainstorm`, `/quick-design`, `/balance-check`, `/ux-review`, `/xing-review`, `/playtest-report`, `/dev-story`
+- Skills: `/brainstorm`, `/quick-design`, `/scope-check`, `/dev-story`, `/balance-check`, `/ux-review`, `/perf-profile`, `/security-audit`, `/xing-review`, `/playtest-report`
 - Agents: `systems-designer`, `ux-reviewer`, `code-reviewer`, `qa-tester`
 - Templates, canonical rules and product pillars: `docs/` (`rules.md`, `pillars.md`)
