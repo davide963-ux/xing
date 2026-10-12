@@ -21,7 +21,7 @@ Deployed on Vercel from `main` of github.com/davide963-ux/xing. Auth + online pl
 ## Language
 - The game is Albanian-only (audience: Albania). All user-facing text lives in `src/i18n/sq.ts`; never hard-code UI strings in components.
 - Headline on the landing page is fixed by the owner: "LUAJ XING ME NACUT DHE COGAT".
-- Card-game terms (xhaku, asi, pako, ...) were chosen by Claude and are unreviewed by a native speaker.
+- Owner-confirmed terms: Jack = Jani, King = Derri, Queen = Qupa. Other terms (asi, pako, pirg, ...) were chosen by Claude and are unreviewed by a native speaker.
 
 ## Working agreements
 - Do not push to GitHub, change Supabase data/schema, or send anything outward without asking first.

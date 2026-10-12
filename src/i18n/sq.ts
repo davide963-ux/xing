@@ -35,9 +35,9 @@ export const sq = {
     stepsTitle: 'Mëso për 30 sekonda',
     steps: [
       { title: 'Përputh letrën e sipërme', text: 'Letra me të njëjtin numër merr gjithë pirgun.' },
-      { title: 'Xhaku merr gjithçka', text: 'Një xhak (J) kap çdo pirg që ka letra.' },
+      { title: 'Jani merr gjithçka', text: 'Jani (J) kap çdo pirg që ka letra.' },
       { title: 'Një letër e vetme? Bëj Xing!', text: 'Kape me letrën e njëjtë dhe merr +10 pikë.' },
-      { title: 'Asat, xhakët, 10♦ dhe 2♣ japin pikë', text: 'I pari që arrin 101 pikë e fiton lojën.' },
+      { title: 'Asat, Janët, 10♦ dhe 2♣ japin pikë', text: 'I pari që arrin 101 pikë e fiton lojën.' },
     ],
     finalTitle: 'Gati për një tavolinë?',
     finalText: 'Krijo llogari dhe luaj me nacut dhe cogat.',
@@ -71,7 +71,7 @@ export const sq = {
   },
 
   setup: {
-    tagline: 'Loja e njohur shqiptare me letra: kap, merr xhakun dhe bëj Xing.',
+    tagline: 'Loja e njohur shqiptare me letra: kap letrat, përdor Janin dhe bëj Xing.',
     signedIn: (name: string) => `I kyçur si ${name}`,
     mode: 'Lloji i lojës',
     mode2: 'Ti kundër kompjuterit',
@@ -79,8 +79,8 @@ export const sq = {
     playTo: 'Luaj deri në',
     points: (n: number) => `${n} pikë`,
     variants: 'Variante të rregullave',
-    jackXing: 'Xing me xhak mbi xhak = 20 pikë',
-    jackXingHint: 'Një xhak i vetëm që kapet me një xhak tjetër. Nëse është i fikur, është kapje e zakonshme.',
+    jackXing: 'Xing me Jan mbi Jan = 20 pikë',
+    jackXingHint: 'Një Jan i vetëm që kapet me një Jan tjetër. Nëse është i fikur, është kapje e zakonshme.',
     finalXing: 'Lejo Xing në letrën e fundit',
     finalXingHint: 'I fikur: letra e fundit e raundit nuk merr kurrë bonus Xing.',
     skill: 'Niveli i kompjuterit',
@@ -129,7 +129,7 @@ export const sq = {
       `${who} ${you ? 'luajte' : 'luajti'} ${card} në tavolinë bosh`,
     played: (who: string, you: boolean, card: string) => `${who} ${you ? 'luajte' : 'luajti'} ${card}`,
     jackXing: (who: string, you: boolean, card: string) =>
-      `${who} ${you ? 'bëre' : 'bëri'} XING me xhak (${card}): +20!`,
+      `${who} ${you ? 'bëre' : 'bëri'} XING me Jan (${card}): +20!`,
     xing: (who: string, you: boolean, card: string) => `${who} ${you ? 'bëre' : 'bëri'} XING me ${card}: +10!`,
     tookStack: (who: string, you: boolean, card: string, n: number) =>
       `${who} ${you ? 'more' : 'mori'} pirgun me ${card} dhe ${you ? 'kape' : 'kapi'} ${n} ${plural(n, 'letër', 'letra')}`,
@@ -138,8 +138,8 @@ export const sq = {
   },
 
   fx: {
-    jackXingTitle: 'XING ME XHAK! +20',
-    jackXingSub: (who: string) => `${who} kapi një xhak të vetëm me xhak`,
+    jackXingTitle: 'XING ME JAN! +20',
+    jackXingSub: (who: string) => `${who} kapi një Jan të vetëm me Jan`,
     xingTitle: 'XING! +10',
     xingSub: (who: string) => `${who} kapi një letër të vetme`,
     captured: (who: string, n: number) => `${who} kapi ${n} ${plural(n, 'letër', 'letra')}`,
@@ -153,13 +153,13 @@ export const sq = {
     rows: {
       cards: 'Letra të marra',
       aces: 'Asat',
-      jacks: 'Xhakët',
+      jacks: 'Janët',
       ten: '10♦',
       two: '2♣',
       majority: 'Më shumë letra',
       cardPoints: 'Pikë nga letrat',
       xing10: 'Xing × 10',
-      xing20: 'Xing me xhak × 20',
+      xing20: 'Xing me Jan × 20',
       total: 'Totali i raundit',
     },
     match: (target: number) => `Pikët e lojës (${target})`,
@@ -205,15 +205,15 @@ export const sq = {
       {
         h: 'Ndarja',
         p: [
-          'Në mes vendosen 4 letra (tre të kthyera, një e hapur – kurrë xhak), pastaj çdo lojtar merr 4 letra. Fillon lojtari në të djathtë të atij që ndan; loja vazhdon në drejtim të kundërt të akrepave të orës. Kur mbarojnë letrat në dorë, ndahen sërish nga 4 për secilin nga pakoja (në mes nuk shtohet asgjë), deri sa të mbarojë pakoja.',
+          'Në mes vendosen 4 letra (tre të kthyera, një e hapur – kurrë Jan), pastaj çdo lojtar merr 4 letra. Fillon lojtari në të djathtë të atij që ndan; loja vazhdon në drejtim të kundërt të akrepave të orës. Kur mbarojnë letrat në dorë, ndahen sërish nga 4 për secilin nga pakoja (në mes nuk shtohet asgjë), deri sa të mbarojë pakoja.',
         ],
       },
       {
         h: 'Radha jote',
         ol: [
-          'Tavolina bosh: letra jote nis një pirg të ri (edhe xhaku mbetet aty).',
+          'Tavolina bosh: letra jote nis një pirg të ri (edhe Jani mbetet aty).',
           'Letër me të njëjtin numër si letra e SIPËRME: merr gjithë pirgun, bashkë me letrën tënde.',
-          'Xhaku (J) merr çdo pirg që ka letra.',
+          'Jani (J) merr çdo pirg që ka letra.',
           'Ndryshe, letra jote bëhet letra e re e sipërme.',
         ],
         p: ['Llogaritet vetëm letra e sipërme – nuk mblidhen vlera dhe nuk kapen letra të fshehura poshtë.'],
@@ -221,19 +221,19 @@ export const sq = {
       {
         h: 'Bonuset Xing',
         ul: [
-          '<b>Xing +10:</b> në tavolinë ka vetëm një letër dhe ti e kap me të njëjtin numër (jo me xhak).',
-          '<b>Xing me xhak +20:</b> një xhak i vetëm kapet me një xhak tjetër (mund të fiket në cilësime).',
+          '<b>Xing +10:</b> në tavolinë ka vetëm një letër dhe ti e kap me të njëjtin numër (jo me Jan).',
+          '<b>Xing me Jan +20:</b> një Jan i vetëm kapet me një Jan tjetër (mund të fiket në cilësime).',
           'Pirgu i parë me 4 letra nuk bën kurrë Xing. Si rregull, letra e fundit e raundit nuk merr bonus Xing.',
         ],
       },
       {
         h: 'Pikët (16 për raund + Xing)',
         table: [
-          ['Çdo as / çdo xhak', '1'],
+          ['Çdo as / çdo Jan', '1'],
           ['10♦', '3'],
           ['2♣', '2'],
           ['Më shumë letra të marra (26–26 nuk jep asgjë)', '3'],
-          ['Xing / Xing me xhak', '10 / 20'],
+          ['Xing / Xing me Jan', '10 / 20'],
         ],
         p: [
           'Letrat që mbeten në tavolinë në fund shkojnë te kapësi i fundit, pa bonus. Loja vendoset pas një raundi të plotë: kush arrin pikët e caktuara e fiton, nëse arrijnë të dy fiton ai me më shumë pikë, dhe me pikë të barabarta luhet edhe një raund.',
