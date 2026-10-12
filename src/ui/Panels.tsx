@@ -87,6 +87,7 @@ export function SetupScreen({
   onOnline,
   user,
   onSignOut,
+  extra,
 }: {
   settings: Settings
   onChange: (s: Settings) => void
@@ -95,6 +96,7 @@ export function SetupScreen({
   onOnline: () => void
   user: string
   onSignOut: () => void
+  extra?: React.ReactNode
 }) {
   return (
     <div className="setup">
@@ -109,6 +111,7 @@ export function SetupScreen({
             {sq.common.signOut}
           </button>
         </p>
+        {extra}
         <SettingsForm value={settings} onChange={onChange} />
         <div className="row">
           <button className="btn primary big online" onClick={onOnline}>

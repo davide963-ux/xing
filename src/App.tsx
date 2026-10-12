@@ -6,12 +6,14 @@ import { EndedScreen, LobbyScreen, RoundResults, RulesModal, SettingsModal, Setu
 import { describeEvent, meOf, posOf, seatName, teamName } from './ui/format'
 import type { Pos } from './ui/format'
 import { useGame } from './ui/useGame'
-import type { Settings } from './ui/useGame'
+import type { Overlay, Settings } from './ui/useGame'
 import type { Anim, Banner } from './ui/playFx'
 import { useOnline } from './online/useOnline'
 import { teamOf } from './engine/engine'
 import { AuthGate, displayName, signOut } from './auth/AuthGate'
 import { sq } from './i18n/sq'
+import { DailyCard, DailyResultModal } from './ui/Daily'
+import type { DailyResult } from './engine/daily'
 
 export default function App() {
   return (
@@ -25,7 +27,7 @@ export interface Ctl {
   match: MatchState | null
   anim: Anim | null
   banner: Banner | null
-  overlay: 'round' | 'winner' | null
+  overlay: Overlay
   modal: 'rules' | 'settings' | null
   setModal: (m: 'rules' | 'settings' | null) => void
   settings: Settings
@@ -36,6 +38,8 @@ export interface Ctl {
   leave: () => void
   online: boolean
   waitingNext: boolean
+  daily: boolean
+  dailyResult: DailyResult | null
 }
 
 function Game({ user }: { user: string }) {
@@ -49,11 +53,15 @@ function Game({ user }: { user: string }) {
     leave: off.backToSetup,
     online: false,
     waitingNext: false,
+    daily: off.inDaily,
+    dailyResult: off.dailyResult,
   }
   const online: Ctl = {
     ...on,
     again: () => on.search(on.wantPlayers),
     online: true,
+    daily: false,
+    dailyResult: null,
   }
   const g = on.phase === 'playing' && on.match ? online : offline
   const { match } = g
@@ -71,6 +79,7 @@ function Game({ user }: { user: string }) {
         onStart={() => off.startMatch(settings.config)}
         onOnline={() => on.search(settings.config.playerCount)}
         onRules={() => off.setModal('rules')}
+        extra={<DailyCard dayKey={off.dayKey} result={off.dailyResult} onPlay={off.startDaily} />}
         user={user}
         onSignOut={() => void signOut()}
       />
@@ -121,7 +130,7 @@ function GameView({ g, match, user }: { g: Ctl; match: MatchState; user: string 
             <button className="btn sm" onClick={() => g.setModal('rules')}>
               {sq.game.rules}
             </button>
-            {!g.online && (
+            {!g.online && !g.daily && (
               <button className="btn sm" onClick={() => g.setModal('settings')}>
                 {sq.game.settings}
               </button>
@@ -129,12 +138,14 @@ function GameView({ g, match, user }: { g: Ctl; match: MatchState; user: string 
             <button
               className="btn sm"
               onClick={() => {
-                if (g.online) {
+                if (g.daily) {
+                  if (window.confirm(sq.daily.leaveConfirm)) g.leave()
+                } else if (g.online) {
                   if (window.confirm(sq.game.leaveConfirm)) g.leave()
                 } else if (window.confirm(sq.game.restartConfirm)) g.again()
               }}
             >
-              {g.online ? sq.game.leave : sq.game.restart}
+              {g.online || g.daily ? sq.game.leave : sq.game.restart}
             </button>
             <button
               className="btn sm"
@@ -217,6 +228,7 @@ function GameView({ g, match, user }: { g: Ctl; match: MatchState; user: string 
         </ol>
       </aside>
 
+      {g.overlay === 'daily' && g.dailyResult && <DailyResultModal result={g.dailyResult} onMenu={g.leave} />}
       {g.overlay === 'round' && <RoundResults match={match} onContinue={g.continueRound} waiting={g.waitingNext} />}
       {g.overlay === 'winner' && match.winner !== null && (
         <WinnerScreen match={match} onAgain={g.again} onMenu={g.leave} />

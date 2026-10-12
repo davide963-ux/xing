@@ -1,8 +1,11 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
 import { chooseCard, getPublicView } from '../engine/ai'
 import type { AiLevel } from '../engine/ai'
+import { DAILY_CONFIG, createDailyRound, dailyAiRng, dailyResultOf, dateKey } from '../engine/daily'
+import type { DailyResult } from '../engine/daily'
 import { DEFAULT_CONFIG, canPlay, commitRound, newMatch, nextRound, playCard } from '../engine/engine'
 import type { GameConfig, MatchState } from '../engine/types'
+import { loadDaily, saveDaily } from './dailyStore'
 import { runPlayFx } from './playFx'
 import type { Anim, Banner } from './playFx'
 import { setSoundEnabled, sfx } from './sound'
@@ -16,7 +19,7 @@ export interface Settings {
 export type { Anim, Banner }
 
 export type Modal = 'rules' | 'settings' | null
-export type Overlay = 'round' | 'winner' | null
+export type Overlay = 'round' | 'winner' | 'daily' | null
 
 const KEY = 'xing.settings.v1'
 const DEFAULT_SETTINGS: Settings = { config: DEFAULT_CONFIG, aiLevel: 'normal', sound: true }
@@ -52,6 +55,10 @@ export function useGame() {
   const [banner, setBanner] = useState<Banner | null>(null)
   const [overlay, setOverlay] = useState<Overlay>(null)
   const [modal, setModal] = useState<Modal>(null)
+  const [dayKey, setDayKey] = useState(() => dateKey())
+  const [dailyResult, setDailyResult] = useState<DailyResult | null>(() => loadDaily(dateKey()))
+  const [inDaily, setInDaily] = useState(false)
+  const daily = useRef<{ key: string; aiRng: () => number } | null>(null)
 
   const matchRef = useRef<MatchState | null>(null)
   const busy = useRef(false)
@@ -107,13 +114,40 @@ export function useGame() {
   const startMatch = useCallback(
     (config: GameConfig) => {
       reset()
+      daily.current = null
+      setInDaily(false)
       setMatch(newMatch(config, Math.random))
     },
     [reset, setMatch],
   )
 
+  /** Today's challenge: one fixed deal, one round, normal computer. */
+  const startDaily = useCallback(() => {
+    reset()
+    const key = dateKey()
+    setDayKey(key)
+    setDailyResult(loadDaily(key))
+    daily.current = { key, aiRng: dailyAiRng(key) }
+    setInDaily(true)
+    setMatch({
+      config: DAILY_CONFIG,
+      scores: [0, 0],
+      dealer: 1,
+      roundNumber: 1,
+      round: createDailyRound(key),
+      roundHistory: [],
+      winner: null,
+      tiedAtTarget: false,
+      roundCommitted: false,
+    })
+  }, [reset, setMatch])
+
   const backToSetup = useCallback(() => {
     reset()
+    daily.current = null
+    setInDaily(false)
+    setDayKey(dateKey())
+    setDailyResult(loadDaily(dateKey()))
     setMatch(null)
   }, [reset, setMatch])
 
@@ -130,6 +164,15 @@ export function useGame() {
         if (state.phase === 'finished') {
           const done = commitRound(matchRef.current!)
           setMatch(done)
+          if (daily.current) {
+            const saved = saveDaily(dailyResultOf(daily.current.key, state))
+            setDailyResult(saved)
+            later(450, () => {
+              sfx(saved.outcome === 'win' ? 'win' : saved.outcome === 'loss' ? 'lose' : 'round')
+              setOverlay('daily')
+            })
+            return
+          }
           later(450, () => {
             if (done.winner !== null) sfx(done.winner === 0 ? 'win' : 'lose')
             else sfx('round')
@@ -162,7 +205,11 @@ export function useGame() {
       () => {
         const m = matchRef.current
         if (!m || m.round.current !== seat || m.round.phase !== 'playing') return
-        play(seat, chooseCard(getPublicView(m.round, seat), Math.random, settingsRef.current.aiLevel))
+        const d = daily.current
+        const card = d
+          ? chooseCard(getPublicView(m.round, seat), d.aiRng, 'normal')
+          : chooseCard(getPublicView(m.round, seat), Math.random, settingsRef.current.aiLevel)
+        play(seat, card)
       },
       700 + Math.random() * 500,
     )
@@ -179,6 +226,10 @@ export function useGame() {
     modal,
     setModal,
     startMatch,
+    startDaily,
+    dayKey,
+    dailyResult,
+    inDaily,
     backToSetup,
     play,
     continueRound,

@@ -187,6 +187,30 @@ export const sq = {
     another: 'Gjej një lojë tjetër',
   },
 
+  daily: {
+    name: 'Sfida e Ditës',
+    title: (n: number) => `Sfida e Ditës #${n}`,
+    blurb: 'E njëjta ndarje për të gjithë sot. Një raund kundër kompjuterit – sa pikë bën?',
+    play: 'Luaj sfidën',
+    yourResult: 'Rezultati yt sot',
+    next: (h: number, m: number) => `Sfida e re pas ${h} orë e ${m} min`,
+    win: 'Fitove!',
+    loss: 'Humbe këtë herë',
+    tie: 'Barazim',
+    xingLine: (x10: number, x20: number) =>
+      x10 + x20 === 0 ? 'Pa Xing' : `Xing ×${x10}${x20 ? ` · Xing me Jan ×${x20}` : ''}`,
+    shareText: (n: number, you: number, cpu: number, outcome: 'win' | 'loss' | 'tie', xing: string) =>
+      `XING · Sfida e Ditës #${n}
+Ti ${you} – ${cpu} Kompjuteri ${outcome === 'win' ? '✅' : outcome === 'loss' ? '❌' : '🤝'}
+${xing}
+luajxing.com`,
+    whatsapp: 'Ndaj në WhatsApp',
+    copy: 'Kopjo',
+    copied: 'U kopjua ✓',
+    menu: 'Menyja kryesore',
+    leaveConfirm: 'Të largohesh nga sfida? Rezultati ruhet vetëm kur ta mbarosh.',
+  },
+
   settingsModal: {
     save: 'Ruaj',
     apply: 'Zbato dhe rifillo lojën',
