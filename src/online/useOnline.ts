@@ -3,6 +3,7 @@ import { useCallback, useEffect, useRef, useState } from 'react'
 import { supabase } from '../auth/supabase'
 import { canPlay, commitRound, newMatch, nextRound, playCard } from '../engine/engine'
 import type { MatchState } from '../engine/types'
+import { sq } from '../i18n/sq'
 import { runPlayFx } from '../ui/playFx'
 import type { Anim, Banner } from '../ui/playFx'
 import { sfx } from '../ui/sound'
@@ -287,7 +288,7 @@ export function useOnline(name: string, settings: Settings, setSettings: (s: Set
           hc.on('presence', { event: 'leave' }, () => {
             const m = matchRef.current
             if (phaseRef.current === 'playing' && m && m.winner === null) {
-              setEndMsg('A player left the match.')
+              setEndMsg(sq.online.left)
               setPhaseBoth('ended')
             }
           })
@@ -369,7 +370,7 @@ export function useOnline(name: string, settings: Settings, setSettings: (s: Set
         .then(() => lobby.track({ id, name: nameRef.current, t: joinedAt }))
         .catch(() => {
           if (gen === generation.current) {
-            setEndMsg('Could not reach the game server. Check your connection and try again.')
+            setEndMsg(sq.online.noServer)
             setPhaseBoth('ended')
           }
         })

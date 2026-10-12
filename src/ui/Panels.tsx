@@ -1,46 +1,42 @@
 import { useState } from 'react'
 import type { AiLevel } from '../engine/ai'
 import type { GameConfig, MatchState, RoundScore } from '../engine/types'
+import { sq } from '../i18n/sq'
 import type { Settings } from './useGame'
 import { meOf, teamName } from './format'
 
 // ------------------------------------------------------------ settings form
 
-export function SettingsForm({
-  value,
-  onChange,
-}: {
-  value: Settings
-  onChange: (s: Settings) => void
-}) {
+export function SettingsForm({ value, onChange }: { value: Settings; onChange: (s: Settings) => void }) {
   const { config } = value
+  const s = sq.setup
   const setCfg = (patch: Partial<GameConfig>) => onChange({ ...value, config: { ...config, ...patch } })
   return (
     <div className="form">
       <fieldset>
-        <legend>Mode</legend>
+        <legend>{s.mode}</legend>
         <label className={`choice ${config.playerCount === 2 ? 'on' : ''}`}>
           <input type="radio" name="mode" checked={config.playerCount === 2} onChange={() => setCfg({ playerCount: 2 })} />
-          <b>2 players</b>
-          <span>You vs. the computer</span>
+          <b>{sq.common.players2}</b>
+          <span>{s.mode2}</span>
         </label>
         <label className={`choice ${config.playerCount === 4 ? 'on' : ''}`}>
           <input type="radio" name="mode" checked={config.playerCount === 4} onChange={() => setCfg({ playerCount: 4 })} />
-          <b>4 players</b>
-          <span>You &amp; Arben vs. Drita &amp; Ilir</span>
+          <b>{sq.common.players4}</b>
+          <span>{s.mode4}</span>
         </label>
       </fieldset>
       <fieldset>
-        <legend>Play to</legend>
+        <legend>{s.playTo}</legend>
         {([51, 101] as const).map((t) => (
           <label key={t} className={`choice small ${config.targetScore === t ? 'on' : ''}`}>
             <input type="radio" name="target" checked={config.targetScore === t} onChange={() => setCfg({ targetScore: t })} />
-            <b>{t} points</b>
+            <b>{s.points(t)}</b>
           </label>
         ))}
       </fieldset>
       <fieldset>
-        <legend>Rule variants</legend>
+        <legend>{s.variants}</legend>
         <label className="check">
           <input
             type="checkbox"
@@ -48,8 +44,8 @@ export function SettingsForm({
             onChange={(e) => setCfg({ rules: { ...config.rules, jackXing20: e.target.checked } })}
           />
           <span>
-            <b>Jack-on-jack Xing = 20 points</b>
-            <small>A lone jack captured by another jack. When off it is an ordinary capture.</small>
+            <b>{s.jackXing}</b>
+            <small>{s.jackXingHint}</small>
           </span>
         </label>
         <label className="check">
@@ -59,24 +55,24 @@ export function SettingsForm({
             onChange={(e) => setCfg({ rules: { ...config.rules, allowFinalXing: e.target.checked } })}
           />
           <span>
-            <b>Allow Xing on the final card</b>
-            <small>Off: the last card of the round never earns a Xing bonus.</small>
+            <b>{s.finalXing}</b>
+            <small>{s.finalXingHint}</small>
           </span>
         </label>
       </fieldset>
       <fieldset>
-        <legend>Computer skill</legend>
+        <legend>{s.skill}</legend>
         {(['normal', 'easy'] as AiLevel[]).map((l) => (
           <label key={l} className={`choice small ${value.aiLevel === l ? 'on' : ''}`}>
             <input type="radio" name="ai" checked={value.aiLevel === l} onChange={() => onChange({ ...value, aiLevel: l })} />
-            <b>{l === 'normal' ? 'Normal' : 'Easy'}</b>
+            <b>{l === 'normal' ? s.normal : s.easy}</b>
           </label>
         ))}
       </fieldset>
       <label className="check">
         <input type="checkbox" checked={value.sound} onChange={(e) => onChange({ ...value, sound: e.target.checked })} />
         <span>
-          <b>Sound effects</b>
+          <b>{s.sound}</b>
         </span>
       </label>
     </div>
@@ -106,20 +102,23 @@ export function SetupScreen({
         <h1 className="logo">
           XING<span>♠ ♥ ♦ ♣</span>
         </h1>
-        <p className="tagline">The Albanian card game of captures, jacks and the 10-point Xing.</p>
+        <p className="tagline">{sq.setup.tagline}</p>
         <p className="whoami">
-          Signed in as <b>{user}</b> · <button type="button" onClick={onSignOut}>Sign out</button>
+          {sq.setup.signedIn(user)} ·{' '}
+          <button type="button" onClick={onSignOut}>
+            {sq.common.signOut}
+          </button>
         </p>
         <SettingsForm value={settings} onChange={onChange} />
         <div className="row">
-          <button className="btn primary big" onClick={onStart}>
-            Play vs computer
-          </button>
           <button className="btn primary big online" onClick={onOnline}>
-            Play online
+            {sq.setup.playOnline}
+          </button>
+          <button className="btn primary big" onClick={onStart}>
+            {sq.setup.playComputer}
           </button>
           <button className="btn" onClick={onRules}>
-            How to play
+            {sq.setup.rules}
           </button>
         </div>
       </div>
@@ -135,7 +134,7 @@ export function Modal({ title, onClose, children }: { title: string; onClose: ()
       <div className="modal" role="dialog" aria-modal="true" aria-label={title} onClick={(e) => e.stopPropagation()}>
         <header>
           <h2>{title}</h2>
-          <button className="icon" onClick={onClose} aria-label="Close">
+          <button className="icon" onClick={onClose} aria-label={sq.common.close}>
             ✕
           </button>
         </header>
@@ -145,54 +144,54 @@ export function Modal({ title, onClose, children }: { title: string; onClose: ()
   )
 }
 
+/** Static, trusted strings from `sq` only (may contain <b>). */
+const Rich = ({ html }: { html: string }) => <span dangerouslySetInnerHTML={{ __html: html }} />
+
+export function RulesBody() {
+  return (
+    <div className="rules">
+      {sq.rules.sections.map((sec) => (
+        <section key={sec.h}>
+          <h3>{sec.h}</h3>
+          {'ol' in sec && sec.ol && (
+            <ol>
+              {sec.ol.map((x) => (
+                <li key={x}>{x}</li>
+              ))}
+            </ol>
+          )}
+          {'ul' in sec && sec.ul && (
+            <ul>
+              {sec.ul.map((x) => (
+                <li key={x}>
+                  <Rich html={x} />
+                </li>
+              ))}
+            </ul>
+          )}
+          {'table' in sec && sec.table && (
+            <table className="mini">
+              <tbody>
+                {sec.table.map(([a, b]) => (
+                  <tr key={a}>
+                    <td>{a}</td>
+                    <td>{b}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          )}
+          {sec.p?.map((x) => <p key={x}>{x}</p>)}
+        </section>
+      ))}
+    </div>
+  )
+}
+
 export function RulesModal({ onClose }: { onClose: () => void }) {
   return (
-    <Modal title="Rules of Xing" onClose={onClose}>
-      <div className="rules">
-        <h3>Cards &amp; players</h3>
-        <p>
-          52 cards, no jokers. Only rank matters, never suit. Play 1 vs 1, or 2 vs 2 with partners sitting opposite
-          each other (partners share captured cards and points).
-        </p>
-        <h3>Dealing</h3>
-        <p>
-          Four cards go to the middle (three face down, one face up – never a jack), then four to each player. The
-          player to the dealer&rsquo;s right starts; play runs counterclockwise. When hands run out, four more are dealt
-          to each player from the deck (nothing is added to the middle) until the deck is finished.
-        </p>
-        <h3>Your turn</h3>
-        <ol>
-          <li>Empty table: your card starts a new stack (even a jack).</li>
-          <li>Same rank as the <b>top</b> card: you capture the whole stack, including your card.</li>
-          <li>A jack captures any non-empty stack.</li>
-          <li>Otherwise your card becomes the new top card.</li>
-        </ol>
-        <p>Only the top card counts – no adding values, no buried matches.</p>
-        <h3>Xing bonuses</h3>
-        <ul>
-          <li>
-            <b>Xing +10:</b> exactly one card on the table, captured with the same rank (not with a jack).
-          </li>
-          <li>
-            <b>Jack Xing +20:</b> a single jack captured by another jack (can be switched off).
-          </li>
-          <li>The opening four-card stack never counts. By default the very last card of the round cannot Xing.</li>
-        </ul>
-        <h3>Scoring (16 points per round + Xings)</h3>
-        <table className="mini">
-          <tbody>
-            <tr><td>Each ace / each jack</td><td>1</td></tr>
-            <tr><td>10♦</td><td>3</td></tr>
-            <tr><td>2♣</td><td>2</td></tr>
-            <tr><td>Most cards captured (a 26–26 tie scores nobody)</td><td>3</td></tr>
-            <tr><td>Xing / Jack Xing</td><td>10 / 20</td></tr>
-          </tbody>
-        </table>
-        <p>
-          Cards left on the table at the end go to the last player (team) who captured – without a bonus. The match is
-          decided after a completed round: at the target score the higher total wins; equal totals mean another round.
-        </p>
-      </div>
+    <Modal title={sq.rules.title} onClose={onClose}>
+      <RulesBody />
     </Modal>
   )
 }
@@ -211,7 +210,7 @@ export function SettingsModal({
   const [draft, setDraft] = useState(settings)
   const rulesChanged = JSON.stringify(draft.config) !== JSON.stringify(settings.config)
   return (
-    <Modal title="Settings" onClose={onClose}>
+    <Modal title={sq.game.settings} onClose={onClose}>
       <SettingsForm
         value={draft}
         onChange={(s) => {
@@ -220,36 +219,32 @@ export function SettingsModal({
         }}
       />
       <div className="row">
-        <button
-          className="btn primary"
-          onClick={() => {
-            onApply(draft)
-          }}
-        >
-          {rulesChanged ? 'Apply & restart match' : 'Save'}
+        <button className="btn primary" onClick={() => onApply(draft)}>
+          {rulesChanged ? sq.settingsModal.apply : sq.settingsModal.save}
         </button>
         <button className="btn" onClick={onClose}>
-          Cancel
+          {sq.common.cancel}
         </button>
       </div>
-      {rulesChanged && <p className="note">Changing mode, target or rule variants starts a new match.</p>}
+      {rulesChanged && <p className="note">{sq.settingsModal.note}</p>}
     </Modal>
   )
 }
 
 // ------------------------------------------------------------ results
 
-const ROWS: { label: string; get: (t: RoundScore['teams'][0]) => string | number; hint?: string }[] = [
-  { label: 'Cards captured', get: (t) => t.cards },
-  { label: 'Aces', get: (t) => t.aces },
-  { label: 'Jacks', get: (t) => t.jacks },
-  { label: '10♦', get: (t) => t.tenDiamonds },
-  { label: '2♣', get: (t) => t.twoClubs },
-  { label: 'Most cards', get: (t) => t.majority },
-  { label: 'Card points', get: (t) => t.cardPoints },
-  { label: 'Xing × 10', get: (t) => (t.xing10Count ? `${t.xing10Count} × 10 = ${t.xing10Count * 10}` : 0) },
-  { label: 'Jack Xing × 20', get: (t) => (t.xing20Count ? `${t.xing20Count} × 20 = ${t.xing20Count * 20}` : 0) },
-  { label: 'Round total', get: (t) => t.total },
+const R = sq.results.rows
+const ROWS: { label: string; get: (t: RoundScore['teams'][0]) => string | number; kind?: 'sub' | 'sum' }[] = [
+  { label: R.cards, get: (t) => t.cards },
+  { label: R.aces, get: (t) => t.aces },
+  { label: R.jacks, get: (t) => t.jacks },
+  { label: R.ten, get: (t) => t.tenDiamonds },
+  { label: R.two, get: (t) => t.twoClubs },
+  { label: R.majority, get: (t) => t.majority },
+  { label: R.cardPoints, get: (t) => t.cardPoints, kind: 'sub' },
+  { label: R.xing10, get: (t) => (t.xing10Count ? `${t.xing10Count} × 10 = ${t.xing10Count * 10}` : 0) },
+  { label: R.xing20, get: (t) => (t.xing20Count ? `${t.xing20Count} × 20 = ${t.xing20Count * 20}` : 0) },
+  { label: R.total, get: (t) => t.total, kind: 'sum' },
 ]
 
 export function RoundResults({
@@ -267,9 +262,9 @@ export function RoundResults({
   const leftover = match.round.leftoverCount
   return (
     <div className="backdrop">
-      <div className="modal results" role="dialog" aria-label="Round results">
+      <div className="modal results" role="dialog" aria-label={sq.results.title(match.roundNumber)}>
         <header>
-          <h2>Round {match.roundNumber} results</h2>
+          <h2>{sq.results.title(match.roundNumber)}</h2>
         </header>
         <div className="modal-body">
           <table className="breakdown">
@@ -285,28 +280,24 @@ export function RoundResults({
             </thead>
             <tbody>
               {ROWS.map((r) => (
-                <tr key={r.label} className={r.label === 'Round total' ? 'sum' : r.label === 'Card points' ? 'sub' : ''}>
+                <tr key={r.label} className={r.kind ?? ''}>
                   <td>{r.label}</td>
                   <td>{r.get(score.teams[0])}</td>
                   <td>{r.get(score.teams[1])}</td>
                 </tr>
               ))}
               <tr className="match">
-                <td>Match score ({cfg.targetScore})</td>
+                <td>{sq.results.match(cfg.targetScore)}</td>
                 <td>{match.scores[0]}</td>
                 <td>{match.scores[1]}</td>
               </tr>
             </tbody>
           </table>
-          {leftover > 0 && (
-            <p className="note">{leftover} cards left on the table went to the last capturer (no bonus).</p>
-          )}
-          {match.tiedAtTarget && (
-            <p className="note warn">Both sides reached {cfg.targetScore} with equal totals – another round decides it.</p>
-          )}
+          {leftover > 0 && <p className="note">{sq.results.leftover(leftover)}</p>}
+          {match.tiedAtTarget && <p className="note warn">{sq.results.tie(cfg.targetScore)}</p>}
           <div className="row">
             <button className="btn primary big" onClick={onContinue} disabled={waiting}>
-              {waiting ? 'Waiting for other players…' : 'Next round'}
+              {waiting ? sq.results.waiting : sq.results.next}
             </button>
           </div>
         </div>
@@ -331,20 +322,19 @@ export function WinnerScreen({
   const xing = [0, 1].map((t) => match.roundHistory.reduce((a, r) => a + r.teams[t].xingPoints, 0))
   return (
     <div className="backdrop win">
-      <div className="modal winner" role="dialog" aria-label="Match result">
+      <div className="modal winner" role="dialog" aria-label={sq.results.win}>
         <div className="trophy">{humanWon ? '🏆' : '🃏'}</div>
-        <h2>{humanWon ? 'You win!' : `${teamName(cfg, w)} win${cfg.playerCount === 2 ? 's' : ''}`}</h2>
+        <h2>{humanWon ? sq.results.win : sq.results.teamWins(teamName(cfg, w), cfg.playerCount === 2)}</h2>
         <p className="big-score">
           <span className={w === 0 ? 'hi' : ''}>{match.scores[0]}</span>
           <i>–</i>
           <span className={w === 1 ? 'hi' : ''}>{match.scores[1]}</span>
         </p>
         <p className="note">
-          {teamName(cfg, 0)} vs. {teamName(cfg, 1)} · {match.roundHistory.length} round
-          {match.roundHistory.length === 1 ? '' : 's'} · Xing points {xing[0]} – {xing[1]}
+          {sq.results.summary(teamName(cfg, 0), teamName(cfg, 1), match.roundHistory.length, xing[0], xing[1])}
         </p>
         <details>
-          <summary>Final round breakdown</summary>
+          <summary>{sq.results.finalBreakdown}</summary>
           <table className="breakdown">
             <tbody>
               {ROWS.map((r) => (
@@ -359,10 +349,10 @@ export function WinnerScreen({
         </details>
         <div className="row">
           <button className="btn primary big" onClick={onAgain}>
-            Play again
+            {sq.results.again}
           </button>
           <button className="btn" onClick={onMenu}>
-            Main menu
+            {sq.results.menu}
           </button>
         </div>
       </div>
@@ -390,20 +380,18 @@ export function LobbyScreen({
           XING<span>♠ ♥ ♦ ♣</span>
         </h1>
         <div className="spinner" aria-hidden />
-        <h2>{phase === 'joining' ? 'Match found – setting up the table…' : 'Waiting for players…'}</h2>
+        <h2>{phase === 'joining' ? sq.online.found : sq.online.waiting}</h2>
         <p className="players-found">
           {Array.from({ length: need }, (_, i) => (
             <span key={i} className={`seatdot ${i < waiting || phase === 'joining' ? 'on' : ''}`} />
           ))}
         </p>
         <p className="note">
-          {phase === 'joining'
-            ? 'Connecting…'
-            : `${Math.min(waiting, need)} of ${need} players in the queue. The game starts automatically when the table is full.`}
+          {phase === 'joining' ? sq.online.connecting : sq.online.queue(Math.min(waiting, need), need)}
         </p>
         <div className="row">
           <button className="btn" onClick={onCancel}>
-            Cancel
+            {sq.common.cancel}
           </button>
         </div>
       </div>
@@ -423,13 +411,13 @@ export function EndedScreen({
   return (
     <div className="setup">
       <div className="setup-card lobby">
-        <h2>{message ?? 'The match ended.'}</h2>
+        <h2>{message ?? sq.online.left}</h2>
         <div className="row">
           <button className="btn primary" onClick={onRetry}>
-            Find another match
+            {sq.online.another}
           </button>
           <button className="btn" onClick={onMenu}>
-            Main menu
+            {sq.results.menu}
           </button>
         </div>
       </div>

@@ -1,20 +1,26 @@
 import { cardLabel } from '../engine/cards'
 import type { GameConfig, PlayEvent } from '../engine/types'
+import { ME, sq } from '../i18n/sq'
 
-const NAMES_4 = ['You', 'Drita', 'Arben', 'Ilir']
-const NAMES_2 = ['You', 'Computer']
+const NAMES_4 = [ME, 'Drita', 'Arben', 'Ilir']
+const NAMES_2 = [ME, 'Kompjuteri']
 
 /** The seat shown at the bottom of the screen (always 0 offline). */
 export const meOf = (config: GameConfig): number => config.view?.me ?? 0
 
+export const isMe = (config: GameConfig, seat: number): boolean => seat === meOf(config)
+
 export const seatName = (config: GameConfig, seat: number): string => {
-  if (seat === meOf(config)) return 'You'
+  if (isMe(config, seat)) return ME
   return config.view?.names[seat] ?? (config.playerCount === 2 ? NAMES_2 : NAMES_4)[seat]
 }
 
 export const teamName = (config: GameConfig, team: number): string => {
   const seats = [...Array(config.playerCount).keys()].filter((s) => s % 2 === team)
-  return seats.map((s) => seatName(config, s)).sort((a, b) => Number(a !== 'You') - Number(b !== 'You')).join(' & ')
+  return seats
+    .sort((a, b) => Number(!isMe(config, a)) - Number(!isMe(config, b)))
+    .map((s) => seatName(config, s))
+    .join(' & ')
 }
 
 export type Pos = 'bottom' | 'right' | 'top' | 'left'
@@ -29,12 +35,15 @@ export function posOf(config: GameConfig, seat: number): Pos {
 
 export function describeEvent(config: GameConfig, e: PlayEvent): { text: string; tone: string } {
   const who = seatName(config, e.seat)
+  const you = isMe(config, e.seat)
   const card = cardLabel(e.cardId)
-  if (e.kind === 'start') return { text: `${who} played ${card} on the empty table`, tone: '' }
-  if (e.kind === 'push') return { text: `${who} played ${card}`, tone: '' }
+  if (e.kind === 'start') return { text: sq.ev.playedEmpty(who, you, card), tone: '' }
+  if (e.kind === 'push') return { text: sq.ev.played(who, you, card), tone: '' }
+  if (e.bonus === 20) return { text: sq.ev.jackXing(who, you, card), tone: 'xing20' }
+  if (e.bonus === 10) return { text: sq.ev.xing(who, you, card), tone: 'xing10' }
   const n = e.captured.length
-  if (e.bonus === 20) return { text: `${who} made a JACK XING with ${card}: +20!`, tone: 'xing20' }
-  if (e.bonus === 10) return { text: `${who} made a XING with ${card}: +10!`, tone: 'xing10' }
-  const how = e.captureKind === 'jack' ? `took the stack with ${card}` : `matched with ${card}`
-  return { text: `${who} ${how} and captured ${n} card${n === 1 ? '' : 's'}`, tone: 'capture' }
+  return {
+    text: e.captureKind === 'jack' ? sq.ev.tookStack(who, you, card, n) : sq.ev.matched(who, you, card, n),
+    tone: 'capture',
+  }
 }

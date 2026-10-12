@@ -1,5 +1,5 @@
 import type { CSSProperties } from 'react'
-import { SUIT_NAME, SUIT_SYMBOL, cardById, cardPoints, rankLabel } from '../engine/cards'
+import { SUIT_SYMBOL, cardById, cardPoints, rankLabel } from '../engine/cards'
 
 interface Props {
   id?: number
@@ -12,7 +12,7 @@ interface Props {
 
 export function Card({ id, faceDown, onClick, disabled, className = '', style }: Props) {
   if (faceDown || id === undefined)
-    return <div className={`card back ${className}`} style={style} aria-label="face-down card" />
+    return <div className={`card back ${className}`} style={style} aria-label="letër e kthyer" />
 
   const c = cardById(id)
   const sym = SUIT_SYMBOL[c.suit]
@@ -21,7 +21,7 @@ export function Card({ id, faceDown, onClick, disabled, className = '', style }:
   const cls = `card face ${red ? 'red' : 'black'} ${cardPoints(id) > 0 ? 'pts' : ''} ${
     onClick && !disabled ? 'clickable' : ''
   } ${className}`
-  const label = `${rankLabel(c.rank)} of ${SUIT_NAME[c.suit]}`
+  const label = `${rankLabel(c.rank)}${sym}`
   const body = (
     <>
       <span className="corner tl">
@@ -38,7 +38,7 @@ export function Card({ id, faceDown, onClick, disabled, className = '', style }:
   )
   if (onClick)
     return (
-      <button type="button" className={cls} style={style} onClick={onClick} disabled={disabled} aria-label={`Play ${label}`}>
+      <button type="button" className={cls} style={style} onClick={onClick} disabled={disabled} aria-label={`Luaj ${label}`}>
         {body}
       </button>
     )

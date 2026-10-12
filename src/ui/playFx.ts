@@ -1,6 +1,7 @@
 import type { Dispatch, SetStateAction } from 'react'
 import { pointsOf } from '../engine/engine'
 import type { PlayEvent, RoundState } from '../engine/types'
+import { sq } from '../i18n/sq'
 import { seatName } from './format'
 import { sfx } from './sound'
 
@@ -57,19 +58,17 @@ export function runPlayFx(ctx: FxCtx, before: RoundState, after: RoundState, eve
     if (event.kind === 'capture') {
       const who = seatName(cfg, event.seat)
       const pts = pointsOf(event.captured)
-      const verb = 'captured'
       if (event.bonus === 20) {
-        showBanner({ kind: 'xing20', text: 'JACK XING! +20', sub: `${who} ${verb} a lone jack with a jack` })
+        showBanner({ kind: 'xing20', text: sq.fx.jackXingTitle, sub: sq.fx.jackXingSub(who) })
         sfx('xing20')
       } else if (event.bonus === 10) {
-        showBanner({ kind: 'xing10', text: 'XING! +10', sub: `${who} ${verb} a lone card` })
+        showBanner({ kind: 'xing10', text: sq.fx.xingTitle, sub: sq.fx.xingSub(who) })
         sfx('xing10')
       } else {
-        const n = event.captured.length
         showBanner({
           kind: 'capture',
-          text: `${who} ${verb} ${n} card${n === 1 ? '' : 's'}`,
-          sub: pts > 0 ? `${pts} point${pts === 1 ? '' : 's'} in the stack` : undefined,
+          text: sq.fx.captured(who, event.captured.length),
+          sub: pts > 0 ? sq.fx.pointsInStack(pts) : undefined,
         })
         sfx('capture')
       }
@@ -78,8 +77,8 @@ export function runPlayFx(ctx: FxCtx, before: RoundState, after: RoundState, eve
     } else if (after.leftoverTo !== null) {
       showBanner({
         kind: 'info',
-        text: `Last cards go to ${seatName(cfg, after.leftoverTo)}`,
-        sub: `${after.leftoverCount} left on the table (no bonus)`,
+        text: sq.fx.lastCards(seatName(cfg, after.leftoverTo)),
+        sub: sq.fx.lastCardsSub(after.leftoverCount),
       })
       sfx('capture')
       sweep(after.leftoverTo)

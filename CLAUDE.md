@@ -18,6 +18,11 @@ Deployed on Vercel from `main` of github.com/davide963-ux/xing. Auth + online pl
 - The computer player (`engine/ai.ts`) only receives a `PublicView`, never `RoundState`.
 - Rules are fixed by `docs/rules.md` (project ruleset). Do not "fix" them to a different local variant.
 
+## Language
+- The game is Albanian-only (audience: Albania). All user-facing text lives in `src/i18n/sq.ts`; never hard-code UI strings in components.
+- Headline on the landing page is fixed by the owner: "LUAJ XING ME NACUT DHE COGAT".
+- Card-game terms (xhaku, asi, pako, ...) were chosen by Claude and are unreviewed by a native speaker.
+
 ## Working agreements
 - Do not push to GitHub, change Supabase data/schema, or send anything outward without asking first.
   The Supabase project is shared with another app ("news cms"): never alter its database.

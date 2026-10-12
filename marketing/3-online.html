@@ -1,0 +1,24 @@
+<!doctype html><meta charset="utf-8"><link rel="stylesheet" href="style.css">
+<style>.seat{position:absolute;display:flex;flex-direction:column;align-items:center;gap:10px;font-size:34px;font-weight:700}
+.av{width:130px;height:130px;border-radius:50%;display:grid;place-items:center;font-size:64px;border:6px solid #f2c14e;background:#0a2c20}
+.team2 .av{border-color:#ff9f68}.ct{font-size:26px;color:#9bd8bf;font-weight:600}</style>
+<body><div class="suits"></div>
+<div class="wrap">
+ <div class="kicker">Online multiplayer</div>
+ <h1 style="margin-top:30px;font-size:84px">Press play.<br><em>The table fills up.</em></h1>
+ <div class="spacer"></div>
+ <div style="position:relative;width:900px;height:600px;margin-top:50px">
+  <div style="position:absolute;left:150px;top:110px;width:600px;height:380px;border-radius:50%;background:radial-gradient(#1b8a63,#0d4a36);border:10px solid #07271d;box-shadow:0 20px 50px rgba(0,0,0,.5)"></div>
+  <div class="c back" style="position:absolute;left:330px;top:230px;width:110px;height:154px;border-width:7px;border-radius:12px;transform:rotate(-10deg)"></div>
+  <div class="c gold" data-r="K" data-s="S" style="position:absolute;left:440px;top:220px;width:130px;height:182px;transform:rotate(8deg);font-size:50%"></div>
+  <div class="seat" style="left:385px;top:-40px"><div class="av">🙂</div>Drita (partner)</div>
+  <div class="seat team2" style="left:-10px;top:230px"><div class="av">😎</div>Arben</div>
+  <div class="seat team2" style="right:-10px;top:230px"><div class="av">🤠</div>Ilir</div>
+  <div class="seat" style="left:385px;top:430px;z-index:2"><div class="av">😀</div>You</div>
+ </div>
+ <div class="spacer"></div>
+ <p class="sub" style="margin:0 0 34px">1 vs 1 or 2 vs 2 teams.<br>Find a match in seconds.</p>
+ <div class="url">luajxing.com</div>
+</div>
+<script src="cards.js"></script>
+<style>.c[style*="130px"] .k{font-size:34px}.c[style*="130px"] .k small{font-size:28px}.c[style*="130px"] .m{font-size:70px}.c[style*="130px"] .ms{display:none}</style>

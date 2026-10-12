@@ -11,6 +11,7 @@ import type { Anim, Banner } from './ui/playFx'
 import { useOnline } from './online/useOnline'
 import { teamOf } from './engine/engine'
 import { AuthGate, displayName, signOut } from './auth/AuthGate'
+import { sq } from './i18n/sq'
 
 export default function App() {
   return (
@@ -118,33 +119,33 @@ function GameView({ g, match, user }: { g: Ctl; match: MatchState; user: string 
           <Scoreboard match={match} />
           <div className="controls">
             <button className="btn sm" onClick={() => g.setModal('rules')}>
-              Rules
+              {sq.game.rules}
             </button>
             {!g.online && (
               <button className="btn sm" onClick={() => g.setModal('settings')}>
-                Settings
+                {sq.game.settings}
               </button>
             )}
             <button
               className="btn sm"
               onClick={() => {
                 if (g.online) {
-                  if (window.confirm('Leave this online match?')) g.leave()
-                } else if (window.confirm('Restart the match? Current scores will be lost.')) g.again()
+                  if (window.confirm(sq.game.leaveConfirm)) g.leave()
+                } else if (window.confirm(sq.game.restartConfirm)) g.again()
               }}
             >
-              {g.online ? 'Leave' : 'Restart'}
+              {g.online ? sq.game.leave : sq.game.restart}
             </button>
             <button
               className="btn sm"
               aria-pressed={g.settings.sound}
               onClick={() => g.setSettings({ ...g.settings, sound: !g.settings.sound })}
-              title="Toggle sound"
+              title={sq.game.toggleSound}
             >
               {g.settings.sound ? '🔊' : '🔇'}
             </button>
-            <button className="btn sm" onClick={() => void signOut()} title={`Signed in as ${user}`}>
-              Sign out
+            <button className="btn sm" onClick={() => void signOut()} title={sq.setup.signedIn(user)}>
+              {sq.common.signOut}
             </button>
           </div>
         </header>
@@ -165,9 +166,9 @@ function GameView({ g, match, user }: { g: Ctl; match: MatchState; user: string 
                 <Card faceDown />
               </div>
               <div className="deckcount">
-                <b>{round.deck.length}</b> in deck
+                <b>{round.deck.length}</b> {sq.game.inDeck}
               </div>
-              <div className="dealer">Dealer: {seatName(config, round.dealer)}</div>
+              <div className="dealer">{sq.game.dealer(seatName(config, round.dealer))}</div>
             </div>
             <Pile ids={tableIds} hidden={hiddenSet} anim={g.anim} config={config} />
             <TurnBanner g={g} match={match} />
@@ -176,8 +177,8 @@ function GameView({ g, match, user }: { g: Ctl; match: MatchState; user: string 
           <div className={`me ${myTurn ? 'active' : ''}`}>
             <div className="nameplate">
               <span className="dot" />
-              {seatName(config, me)} {n === 4 && <small>(with {seatName(config, (me + 2) % 4)})</small>}
-              {myTurn && <em>Your turn – pick a card</em>}
+              {seatName(config, me)} {n === 4 && <small>{sq.game.withPartner(seatName(config, (me + 2) % 4))}</small>}
+              {myTurn && <em>{sq.game.yourTurnPick}</em>}
             </div>
             <div className="hand">
               {round.hands[me].map((id, i) => (
@@ -198,7 +199,7 @@ function GameView({ g, match, user }: { g: Ctl; match: MatchState; user: string 
       </div>
 
       <aside className="history">
-        <h3>Action history</h3>
+        <h3>{sq.game.history}</h3>
         <ol>
           {[...round.events]
             .reverse()
@@ -208,11 +209,11 @@ function GameView({ g, match, user }: { g: Ctl; match: MatchState; user: string 
               return (
                 <li key={e.seq} className={d.tone}>
                   {d.text}
-                  {e.dealtAfter && <span className="deal-note">New cards dealt</span>}
+                  {e.dealtAfter && <span className="deal-note">{sq.game.dealtNote}</span>}
                 </li>
               )
             })}
-          {round.events.length === 0 && <li className="muted">Round {match.roundNumber} begins…</li>}
+          {round.events.length === 0 && <li className="muted">{sq.game.roundBegins(match.roundNumber)}</li>}
         </ol>
       </aside>
 
@@ -238,8 +239,8 @@ function Scoreboard({ match }: { match: MatchState }) {
             <div className="tname">{teamName(config, t)}</div>
             <div className="tscore">{match.scores[t]}</div>
             <div className="tmeta">
-              <span title="Cards captured this round">🂠 {round.captured[t].length}</span>
-              <span title="Xing bonuses (×10 / ×20) this match">
+              <span title={sq.game.cardsTaken}>🂠 {round.captured[t].length}</span>
+              <span title={sq.game.xingTitle}>
                 ✕ {past10}×10{config.rules.jackXing20 ? ` · ${past20}×20` : ''}
               </span>
             </div>
@@ -247,9 +248,9 @@ function Scoreboard({ match }: { match: MatchState }) {
         )
       })}
       <div className="roundinfo">
-        Round {match.roundNumber}
+        {sq.game.round(match.roundNumber)}
         <br />
-        <small>to {config.targetScore}</small>
+        <small>{sq.game.to(config.targetScore)}</small>
       </div>
     </div>
   )
@@ -263,7 +264,7 @@ function Opponent({ pos, seat, match, active }: { pos: Pos; seat: number; match:
     <div className={`opp ${pos} ${active ? 'active' : ''}`}>
       <div className="nameplate">
         <span className="dot" />
-        {seatName(config, seat)} {partner && <small>(partner)</small>}
+        {seatName(config, seat)} {partner && <small>{sq.game.partner}</small>}
         <b className="count">{count}</b>
       </div>
       <div className="backs">
@@ -281,8 +282,8 @@ function Pile({ ids, hidden, anim, config }: { ids: number[]; hidden: Set<number
   const sweep = anim?.sweepTo != null ? `sweep-${posOf(config, anim.sweepTo)}` : ''
   return (
     <div className="pile-wrap">
-      <div className={`pile ${sweep}`} aria-label="Central stack">
-        {ids.length === 0 && <div className="empty-slot">Empty</div>}
+      <div className={`pile ${sweep}`} aria-label={sq.game.centralStack}>
+        {ids.length === 0 && <div className="empty-slot">{sq.game.empty}</div>}
         {shown.map((id, i) => {
           const isTop = i === shown.length - 1
           const flying = anim?.flyCard === id && anim.flyFrom !== null
@@ -298,14 +299,14 @@ function Pile({ ids, hidden, anim, config }: { ids: number[]; hidden: Set<number
         })}
       </div>
       <div className="pileinfo">
-        <b>{ids.length}</b> card{ids.length === 1 ? '' : 's'} on the table
+        <b>{ids.length}</b> {sq.game.onTable(ids.length)}
         {top !== null && (
           <>
-            {' · top '}
+            {` · ${sq.game.top} `}
             <b>{cardLabel(top)}</b>
           </>
         )}
-        {ids.length === 1 && <span className="xing-hint">Xing chance!</span>}
+        {ids.length === 1 && <span className="xing-hint">{sq.game.xingChance}</span>}
       </div>
     </div>
   )
@@ -313,11 +314,11 @@ function Pile({ ids, hidden, anim, config }: { ids: number[]; hidden: Set<number
 
 function TurnBanner({ g, match }: { g: Ctl; match: MatchState }) {
   const { round, config } = match
-  if (round.phase !== 'playing') return <div className="turnline">Round over</div>
+  if (round.phase !== 'playing') return <div className="turnline">{sq.game.roundOver}</div>
   const mine = round.current === meOf(config)
   return (
     <div className={`turnline ${mine ? 'mine' : ''}`}>
-      {g.anim ? '…' : mine ? 'Your move' : `${seatName(config, round.current)} is thinking…`}
+      {g.anim ? '…' : mine ? sq.game.yourMove : sq.game.thinking(seatName(config, round.current))}
     </div>
   )
 }

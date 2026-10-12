@@ -1,6 +1,8 @@
 import { useEffect, useState } from 'react'
 import type { ReactNode } from 'react'
 import type { Session } from '@supabase/supabase-js'
+import { sq } from '../i18n/sq'
+import { Landing } from '../ui/Landing'
 import { supabase } from './supabase'
 
 type Mode = 'signin' | 'signup' | 'reset'
@@ -20,26 +22,46 @@ export function useSession() {
 }
 
 export const displayName = (s: Session): string =>
-  (s.user.user_metadata?.username as string | undefined) || s.user.email?.split('@')[0] || 'Player'
+  (s.user.user_metadata?.username as string | undefined) || s.user.email?.split('@')[0] || 'Lojtar'
 
 export const signOut = () => supabase.auth.signOut()
 
-/** Shows the login page until a user is signed in, then renders the game. */
+/** Landing page -> login/sign-up -> game. */
 export function AuthGate({ children }: { children: (s: Session) => ReactNode }) {
   const { session, loading } = useSession()
-  if (loading) return <div className="setup"><div className="setup-card note">Loading…</div></div>
-  if (!session) return <LoginPage />
-  return <>{children(session)}</>
+  const [view, setView] = useState<'landing' | Mode>('landing')
+  if (loading)
+    return (
+      <div className="setup">
+        <div className="setup-card note">{sq.common.loading}</div>
+      </div>
+    )
+  if (session) return <>{children(session)}</>
+  if (view === 'landing') return <Landing onPlay={() => setView('signup')} onLogin={() => setView('signin')} />
+  return <LoginPage initial={view} onHome={() => setView('landing')} />
 }
 
-function LoginPage() {
-  const [mode, setMode] = useState<Mode>('signin')
+/** Translate Supabase's (English) auth errors. */
+function friendlyError(message: string): string {
+  const m = message.toLowerCase()
+  const e = sq.auth.errors
+  if (m.includes('invalid login')) return e.invalid
+  if (m.includes('not confirmed')) return e.unconfirmed
+  if (m.includes('already registered') || m.includes('already been registered')) return e.exists
+  if (m.includes('rate limit') || m.includes('too many')) return e.rate
+  if (m.includes('at least 6')) return sq.auth.shortPassword
+  return e.generic
+}
+
+function LoginPage({ initial, onHome }: { initial: Mode; onHome: () => void }) {
+  const [mode, setMode] = useState<Mode>(initial)
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   const [username, setUsername] = useState('')
   const [busy, setBusy] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [info, setInfo] = useState<string | null>(null)
+  const a = sq.auth
 
   const switchMode = (m: Mode) => {
     setMode(m)
@@ -58,23 +80,23 @@ function LoginPage() {
         const { error } = await supabase.auth.signInWithPassword({ email: email.trim(), password })
         if (error) throw error
       } else if (mode === 'signup') {
-        if (password.length < 6) throw new Error('Password must be at least 6 characters.')
+        if (password.length < 6) throw new Error('at least 6')
         const { data, error } = await supabase.auth.signUp({
           email: email.trim(),
           password,
           options: { data: { username: username.trim() || undefined }, emailRedirectTo: window.location.origin },
         })
         if (error) throw error
-        if (!data.session) setInfo('Account created. Check your email to confirm it, then sign in.')
+        if (!data.session) setInfo(a.created)
       } else {
         const { error } = await supabase.auth.resetPasswordForEmail(email.trim(), {
           redirectTo: window.location.origin,
         })
         if (error) throw error
-        setInfo('If that email has an account, a reset link is on its way.')
+        setInfo(a.resetSent)
       }
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Something went wrong.')
+      setError(friendlyError(err instanceof Error ? err.message : ''))
     } finally {
       setBusy(false)
     }
@@ -86,23 +108,21 @@ function LoginPage() {
         <h1 className="logo">
           XING<span>♠ ♥ ♦ ♣</span>
         </h1>
-        <p className="tagline">
-          {mode === 'signin' ? 'Sign in to play' : mode === 'signup' ? 'Create your account' : 'Reset your password'}
-        </p>
+        <p className="tagline">{mode === 'signin' ? a.signinTitle : mode === 'signup' ? a.signupTitle : a.resetTitle}</p>
 
         {mode === 'signup' && (
           <label className="field">
-            <span>Player name</span>
+            <span>{a.username}</span>
             <input value={username} onChange={(e) => setUsername(e.target.value)} maxLength={20} autoComplete="nickname" />
           </label>
         )}
         <label className="field">
-          <span>Email</span>
+          <span>{a.email}</span>
           <input type="email" required value={email} onChange={(e) => setEmail(e.target.value)} autoComplete="email" />
         </label>
         {mode !== 'reset' && (
           <label className="field">
-            <span>Password</span>
+            <span>{a.password}</span>
             <input
               type="password"
               required
@@ -113,18 +133,41 @@ function LoginPage() {
           </label>
         )}
 
-        {error && <p className="auth-msg err" role="alert">{error}</p>}
-        {info && <p className="auth-msg ok" role="status">{info}</p>}
+        {error && (
+          <p className="auth-msg err" role="alert">
+            {error}
+          </p>
+        )}
+        {info && (
+          <p className="auth-msg ok" role="status">
+            {info}
+          </p>
+        )}
 
         <div className="row">
           <button className="btn primary big" type="submit" disabled={busy}>
-            {busy ? 'Please wait…' : mode === 'signin' ? 'Sign in' : mode === 'signup' ? 'Create account' : 'Send reset link'}
+            {busy ? a.wait : mode === 'signin' ? a.signin : mode === 'signup' ? a.signup : a.sendReset}
           </button>
         </div>
         <div className="auth-links">
-          {mode !== 'signin' && <button type="button" onClick={() => switchMode('signin')}>Back to sign in</button>}
-          {mode === 'signin' && <button type="button" onClick={() => switchMode('signup')}>Create account</button>}
-          {mode === 'signin' && <button type="button" onClick={() => switchMode('reset')}>Forgot password?</button>}
+          {mode !== 'signin' && (
+            <button type="button" onClick={() => switchMode('signin')}>
+              {a.back}
+            </button>
+          )}
+          {mode === 'signin' && (
+            <button type="button" onClick={() => switchMode('signup')}>
+              {a.create}
+            </button>
+          )}
+          {mode === 'signin' && (
+            <button type="button" onClick={() => switchMode('reset')}>
+              {a.forgot}
+            </button>
+          )}
+          <button type="button" onClick={onHome}>
+            {a.home}
+          </button>
         </div>
       </form>
     </div>
