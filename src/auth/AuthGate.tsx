@@ -4,6 +4,7 @@ import type { Session } from '@supabase/supabase-js'
 import { sq } from '../i18n/sq'
 import { SuitRow } from '../ui/Icon'
 import { Landing } from '../ui/Landing'
+import { PrivacyLink } from '../ui/Panels'
 import { supabase } from './supabase'
 
 type Mode = 'signin' | 'signup' | 'reset'
@@ -169,6 +170,7 @@ function LoginPage({ initial, onHome }: { initial: Mode; onHome: () => void }) {
           <button type="button" onClick={onHome}>
             {a.home}
           </button>
+          <PrivacyLink />
         </div>
       </form>
     </div>

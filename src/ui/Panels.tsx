@@ -147,6 +147,9 @@ export function SetupScreen({
           </button>
         </div>
         <AdUnit lazy />
+        <p className="legal-row">
+          <PrivacyLink />
+        </p>
       </div>
     </div>
   )
@@ -217,6 +220,50 @@ export function RulesBody() {
         </section>
       ))}
     </div>
+  )
+}
+
+export function PrivacyModal({ onClose }: { onClose: () => void }) {
+  const p = sq.privacy
+  return (
+    <Modal title={p.title} onClose={onClose}>
+      <div className="rules privacy">
+        <p className="note">{p.updated}</p>
+        <p>{p.intro}</p>
+        {p.sections.map((s) => (
+          <section key={s.h}>
+            <h3>{s.h}</h3>
+            {s.ul && (
+              <ul>
+                {s.ul.map((x) => (
+                  <li key={x}>{x}</li>
+                ))}
+              </ul>
+            )}
+            {s.p?.map((x) => <p key={x}>{x}</p>)}
+          </section>
+        ))}
+        {p.contact.trim() !== '' && (
+          <section>
+            <h3>{p.contactTitle}</h3>
+            <p>{p.contact}</p>
+          </section>
+        )}
+      </div>
+    </Modal>
+  )
+}
+
+/** Small "Privatësia" link that opens the privacy note. */
+export function PrivacyLink() {
+  const [open, setOpen] = useState(false)
+  return (
+    <>
+      <button type="button" className="linkbtn small" onClick={() => setOpen(true)}>
+        {sq.privacy.link}
+      </button>
+      {open && <PrivacyModal onClose={() => setOpen(false)} />}
+    </>
   )
 }
 

@@ -291,6 +291,63 @@ export const sq = {
     daily_7: { title: 'Një javë radhazi', text: 'Luaj Sfidën e Ditës 7 ditë me radhë.' },
   } as Record<string, { title: string; text: string }>,
 
+  privacy: {
+    link: 'Privatësia',
+    title: 'Politika e privatësisë',
+    updated: 'Përditësuar: 16 tetor 2026',
+    intro: 'Kjo faqe shpjegon shkurt çfarë të dhënash përdor loja XING (luajxing.com) dhe pse.',
+    sections: [
+      {
+        h: 'Çfarë të dhënash ruajmë',
+        ul: [
+          'Llogaria: email-i, fjalëkalimi dhe emri i lojtarit që zgjedh. Fjalëkalimi ruhet i koduar nga shërbimi i hyrjes dhe ne nuk e shohim.',
+          'Të dhënat e lojës: sa lojra ke luajtur, fitoret, humbjet, Xing-et, seritë, vlerësimi Elo, arritjet dhe Sfida e Ditës.',
+          'Një regjistër të lojërave të përfunduara (data, lloji i lojës dhe rezultati), që përdoret për statistikat javore.',
+        ],
+      },
+      {
+        h: 'Pse i përdorim',
+        p: [
+          'Për të të lejuar të hysh, për profilin dhe arritjet e tua, për tabelën e lojtarëve dhe për statistika të përgjithshme që na ndihmojnë ta përmirësojmë lojën. Nuk i shesim të dhënat e tua.',
+        ],
+      },
+      {
+        h: 'Çfarë shohin të tjerët',
+        p: [
+          'Emri yt i lojtarit shihet nga lojtarët me të cilët luan online dhe te tabela “Top lojtarët” (bashkë me Elo, fitoret dhe numrin e lojërave). Email-i yt nuk shfaqet askund te lojtarët e tjerë.',
+          'Emrat e lojtarëve më të mirë të javës mund të publikohen në postime javore në rrjetet sociale.',
+        ],
+      },
+      {
+        h: 'Reklamat',
+        p: [
+          'Faqja shfaq reklama nga A-ADS (a-ads.com), një shërbim i palës së tretë. Ai mund të shohë adresën tënde IP dhe të dhëna të pajisjes, dhe mund të përdorë identifikues ose cookies për të shfaqur reklamat. Ne nuk i kontrollojmë reklamat dhe nuk u japim email-in ose emrin tënd. Për më shumë, shiko politikën e tyre.',
+          'Reklamat shfaqen vetëm te faqja kryesore dhe menyja, jo gjatë lojës.',
+        ],
+      },
+      {
+        h: 'Ku ruhen të dhënat',
+        p: [
+          'Të dhënat ruhen te Supabase (hyrja dhe baza e të dhënave), ndërsa faqja shërbehet nga Vercel. Këto shërbime mund të regjistrojnë adresën IP për siguri dhe funksionim.',
+        ],
+      },
+      {
+        h: 'Në pajisjen tënde',
+        p: [
+          'Loja ruan në shfletuesin tënd cilësimet, rezultatin e Sfidës së Ditës dhe sesionin e hyrjes. Vetë loja nuk vendos cookies. Mund t’i fshish këto të dhëna nga cilësimet e shfletuesit.',
+        ],
+      },
+      {
+        h: 'Të drejtat e tua',
+        p: [
+          'Mund të kërkosh të shohësh, të korrigjosh ose të fshish llogarinë dhe të dhënat e tua. Mos ia jep fjalëkalimin tënd askujt, as neve.',
+        ],
+      },
+    ] as { h: string; p?: string[]; ul?: string[] }[],
+    contactTitle: 'Kontakti',
+    contact: '',
+  },
+
   settingsModal: {
     save: 'Ruaj',
     apply: 'Zbato dhe rifillo lojën',

@@ -4,7 +4,7 @@ import { AdUnit } from './AdUnit'
 import { Card } from './Card'
 import { Icon } from './Icon'
 import type { IconName } from './Icon'
-import { RulesBody } from './Panels'
+import { PrivacyLink, RulesBody } from './Panels'
 
 // Face-up cards for the hero: ace of spades, jack of diamonds, 10 of diamonds, 2 of clubs (the point cards).
 const HERO_CARDS = [0, 36, 35, 40] // ids: S=0..12, H=13..25, D=26..38, C=39..51 (rank-1 offset)
@@ -82,6 +82,9 @@ export function Landing({ onPlay, onLogin }: { onPlay: () => void; onLogin: () =
           {l.play}
         </button>
         <div className="lp-domain">luajxing.com</div>
+        <p className="legal-row">
+          <PrivacyLink />
+        </p>
       </section>
     </div>
   )

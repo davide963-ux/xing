@@ -1669,3 +1669,27 @@ a.btn {
 .landing .ad-slot {
   max-width: 900px;
 }
+
+/* ---------- privacy link */
+.legal-row {
+  text-align: center;
+  margin: 0.8rem 0 0;
+}
+.linkbtn.small,
+.auth-links .linkbtn {
+  display: inline;
+  margin: 0;
+  font-size: 0.85rem;
+  color: var(--muted);
+}
+.privacy ul {
+  padding-left: 1.2rem;
+}
+
+.modal {
+  text-align: left;
+}
+.modal.winner,
+.modal.lobby {
+  text-align: center;
+}
