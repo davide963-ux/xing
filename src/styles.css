@@ -32,6 +32,8 @@ body {
   height: 100dvh;
   display: flex;
   flex-direction: column;
+  position: relative;
+  overflow: hidden; /* the page itself must never scroll; screens scroll inside themselves */
 }
 button {
   font: inherit;
@@ -109,6 +111,7 @@ button {
   letter-spacing: 0.08em;
 }
 .choice {
+  position: relative; /* contains the visually hidden radio input so it cannot enlarge the page */
   flex: 1 1 150px;
   display: flex;
   flex-direction: column;
@@ -1692,4 +1695,10 @@ a.btn {
 .modal.winner,
 .modal.lobby {
   text-align: center;
+}
+
+/* keyboard focus on the hidden radio buttons */
+.choice:has(input:focus-visible) {
+  outline: 2px solid var(--gold);
+  outline-offset: 2px;
 }
