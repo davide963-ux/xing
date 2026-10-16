@@ -4,6 +4,7 @@ import type { TextEntry } from '../i18n/texts'
 import { fill, placeholdersOf } from '../i18n/tpl'
 import type { Vars } from '../i18n/tpl'
 import { checkAdmin, resetText, saveText } from './api'
+import { StatsTab } from './Stats'
 
 const GROUPS: Record<string, string> = {
   landing: 'Faqja kryesore (landing)',
@@ -48,17 +49,30 @@ export function AdminPage({ onExit }: { onExit: () => void }) {
     }
   }, [])
 
+  const [tab, setTab] = useState<'stats' | 'texts'>('stats')
   return (
     <div className="admin">
       <header className="admin-top">
-        <h1>Paneli i adminit · Tekstet e lojës</h1>
+        <h1>Paneli i adminit</h1>
         <button className="btn sm" onClick={onExit}>
           ← Kthehu te loja
         </button>
       </header>
       {state === 'checking' && <p className="note">Po kontrollohet qasja…</p>}
       {state === 'no' && <p className="note warn">Nuk ke qasje në këtë faqe.</p>}
-      {state === 'yes' && <Editor />}
+      {state === 'yes' && (
+        <>
+          <div className="tabs admin-tabs" role="tablist">
+            <button role="tab" aria-selected={tab === 'stats'} className={tab === 'stats' ? 'on' : ''} onClick={() => setTab('stats')}>
+              Statistikat
+            </button>
+            <button role="tab" aria-selected={tab === 'texts'} className={tab === 'texts' ? 'on' : ''} onClick={() => setTab('texts')}>
+              Tekstet e lojës
+            </button>
+          </div>
+          {tab === 'stats' ? <StatsTab /> : <Editor />}
+        </>
+      )}
     </div>
   )
 }

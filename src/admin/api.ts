@@ -22,3 +22,40 @@ export async function resetText(key: string): Promise<void> {
   const { error } = await supabase.rpc('admin_reset_text', { p_key: key })
   if (error) throw new Error(error.message)
 }
+
+// ---------------------------------------------------------------- weekly report
+
+export interface Period {
+  online_matches: number
+  online_2p: number
+  online_4p: number
+  computer: number
+  daily: number
+  daily_players: number
+  active_players: number
+  new_players: number
+  xing10: number
+  xing20: number
+  vs_computer_games: number
+  vs_computer_wins: number
+}
+
+export interface Report {
+  start: string
+  end: string
+  offset: number
+  cur: Period
+  prev: Period
+  days: { day: string; games: number }[]
+  top: { username: string; wins: number; games: number; online_wins: number; rating: number }[]
+  totals: { registered: number; games: number }
+}
+
+/** offset 0 = this week (Mon-Sun, Albania time), -1 = last week, ... */
+export async function fetchReport(offset: number): Promise<Report> {
+  const { data, error } = await supabase.rpc('admin_report', { p_week_offset: offset })
+  if (error) throw new Error(error.message)
+  return data as Report
+}
+
+export const totalGames = (p: Period): number => p.online_matches + p.computer + p.daily
