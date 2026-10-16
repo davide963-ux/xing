@@ -1657,3 +1657,15 @@ a.btn {
   margin-top: 0.5rem;
   flex-wrap: wrap;
 }
+
+/* ---------- ads (A-ADS) */
+.ad-slot {
+  width: 100%;
+  margin: 0.6rem auto;
+  position: relative;
+  z-index: 1;
+  text-align: center;
+}
+.landing .ad-slot {
+  max-width: 900px;
+}

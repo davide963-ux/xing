@@ -1,5 +1,6 @@
 import { useRef, useState } from 'react'
 import { sq } from '../i18n/sq'
+import { AdUnit } from './AdUnit'
 import { Card } from './Card'
 import { Icon } from './Icon'
 import type { IconName } from './Icon'
@@ -20,6 +21,8 @@ export function Landing({ onPlay, onLogin }: { onPlay: () => void; onLogin: () =
           {l.login}
         </button>
       </header>
+
+      <AdUnit />
 
       <section className="lp-hero">
         <div className="lp-cards" aria-hidden>
@@ -69,6 +72,8 @@ export function Landing({ onPlay, onLogin }: { onPlay: () => void; onLogin: () =
         </button>
         {rulesOpen && <RulesBody />}
       </section>
+
+      <AdUnit lazy />
 
       <section className="lp-final">
         <h2>{l.finalTitle}</h2>

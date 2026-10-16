@@ -2,6 +2,7 @@ import { useState } from 'react'
 import type { AiLevel } from '../engine/ai'
 import type { GameConfig, MatchState, RoundScore } from '../engine/types'
 import { sq } from '../i18n/sq'
+import { AdUnit } from './AdUnit'
 import { Icon, SuitRow } from './Icon'
 import type { Settings } from './useGame'
 import { meOf, teamName } from './format'
@@ -111,6 +112,7 @@ export function SetupScreen({
         <h1 className="logo">
           XING<span><SuitRow /></span>
         </h1>
+        <AdUnit />
         <p className="tagline">{sq.setup.tagline}</p>
         <p className="whoami">
           {sq.setup.signedIn(user)} ·{' '}
@@ -144,6 +146,7 @@ export function SetupScreen({
             {sq.setup.rules}
           </button>
         </div>
+        <AdUnit lazy />
       </div>
     </div>
   )
