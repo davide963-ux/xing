@@ -1,21 +1,26 @@
 import { cardLabel } from '../engine/cards'
 import type { GameConfig, PlayEvent } from '../engine/types'
+import { teamOf } from '../engine/engine'
 import { ME, sq } from '../i18n/sq'
 
 
 /** The seat shown at the bottom of the screen (always 0 offline). */
 export const meOf = (config: GameConfig): number => config.view?.me ?? 0
 
+/** The side (team) the viewer plays for. */
+export const myTeamOf = (config: GameConfig): number => teamOf(meOf(config), config.playerCount)
+
 export const isMe = (config: GameConfig, seat: number): boolean => seat === meOf(config)
 
 export const seatName = (config: GameConfig, seat: number): string => {
   if (isMe(config, seat)) return ME
   const n = sq.names
-  return config.view?.names[seat] ?? (config.playerCount === 2 ? [ME, n.computer] : [ME, n.bot1, n.bot2, n.bot3])[seat]
+  const defaults = config.playerCount === 2 ? [ME, n.computer] : config.playerCount === 3 ? [ME, n.bot1, n.bot3] : [ME, n.bot1, n.bot2, n.bot3]
+  return config.view?.names[seat] ?? defaults[seat]
 }
 
 export const teamName = (config: GameConfig, team: number): string => {
-  const seats = [...Array(config.playerCount).keys()].filter((s) => s % 2 === team)
+  const seats = [...Array(config.playerCount).keys()].filter((s) => teamOf(s, config.playerCount) === team)
   return seats
     .sort((a, b) => Number(!isMe(config, a)) - Number(!isMe(config, b)))
     .map((s) => seatName(config, s))
@@ -29,6 +34,7 @@ export function posOf(config: GameConfig, seat: number): Pos {
   const n = config.playerCount
   const rel = (seat - meOf(config) + n) % n
   if (n === 2) return rel === 0 ? 'bottom' : 'top'
+  if (n === 3) return (['bottom', 'right', 'left'] as const)[rel] // upper right, then upper left (counterclockwise)
   return (['bottom', 'right', 'top', 'left'] as const)[rel]
 }
 

@@ -28,6 +28,7 @@ export async function resetText(key: string): Promise<void> {
 export interface Period {
   online_matches: number
   online_2p: number
+  online_3p: number
   online_4p: number
   computer: number
   daily: number

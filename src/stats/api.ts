@@ -53,7 +53,7 @@ type Job =
     }
   | {
       fn: 'report_online'
-      args: { p_match_id: string; p_players: number; p_my_team: number; p_score0: number; p_score1: number; p_rounds: number; p_xing10: number; p_xing20: number }
+      args: { p_match_id: string; p_players: number; p_my_team: number; p_score0: number; p_score1: number; p_score2: number; p_rounds: number; p_xing10: number; p_xing20: number }
     }
 
 const OUTBOX = 'xing.outbox.v1'

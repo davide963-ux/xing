@@ -17,8 +17,11 @@ export const DEFAULT_CONFIG: GameConfig = {
 
 export const HAND_SIZE = 4
 
-/** Teams: 2 players -> one each; 4 players -> seats 0&2 vs 1&3 (partners sit opposite). */
-export const teamOf = (seat: number): number => seat % 2
+/** Number of sides: 2 players -> 2, 3 players -> 3 (everyone plays alone), 4 players -> 2 teams. */
+export const teamCount = (playerCount: number): number => (playerCount === 4 ? 2 : playerCount)
+
+/** Side of a seat: 4 players -> seats 0&2 vs 1&3 (partners sit opposite); otherwise one side per seat. */
+export const teamOf = (seat: number, playerCount: number): number => (playerCount === 4 ? seat % 2 : seat)
 
 // ---------------------------------------------------------------- dealing
 
@@ -46,9 +49,9 @@ export function createRound(config: GameConfig, dealer: number, rng: Rng): Round
     deck,
     table: stack,
     hiddenOnTable: stack.slice(0, 3),
-    captured: [[], []],
-    xing10: [0, 0],
-    xing20: [0, 0],
+    captured: Array.from({ length: teamCount(n) }, () => [] as number[]),
+    xing10: new Array<number>(teamCount(n)).fill(0),
+    xing20: new Array<number>(teamCount(n)).fill(0),
     lastCapturer: null,
     revealed: [stack[3]],
     events: [],
@@ -106,7 +109,7 @@ export function playCard(
       else if (s.config.rules.jackXing20) bonus = 20
     }
     if (isFinalCard && !s.config.rules.allowFinalXing) bonus = 0
-    const team = teamOf(seat)
+    const team = teamOf(seat, n)
     captured = s.table
     s.captured[team].push(...captured)
     for (const id of captured) if (!s.revealed.includes(id)) s.revealed.push(id)
@@ -130,7 +133,7 @@ export function playCard(
   if (handsEmpty && !dealtAfter) {
     // End of round: leftovers go to the last capturer; never earns a bonus.
     if (s.lastCapturer !== null && s.table.length > 0) {
-      const team = teamOf(s.lastCapturer)
+      const team = teamOf(s.lastCapturer, n)
       s.leftoverTo = s.lastCapturer
       s.leftoverCount = s.table.length
       s.captured[team].push(...s.table)
@@ -175,8 +178,10 @@ export function scoreRound(state: RoundState): RoundScore {
     cardPoints: 0,
     total: 0,
   }))
-  if (base[0].cards > base[1].cards) base[0].majority = 3
-  else if (base[1].cards > base[0].cards) base[1].majority = 3
+  // most cards: 3 points to the side with strictly the most; a tie for the most gives nobody the bonus
+  const most = Math.max(...base.map((t) => t.cards))
+  const leaders = base.filter((t) => t.cards === most)
+  if (leaders.length === 1) leaders[0].majority = 3
   base.forEach((t, i) => {
     t.xing10Count = state.xing10[i]
     t.xing20Count = state.xing20[i]
@@ -184,7 +189,7 @@ export function scoreRound(state: RoundState): RoundScore {
     t.cardPoints = t.aces + t.jacks + t.tenDiamonds + t.twoClubs + t.majority
     t.total = t.cardPoints + t.xingPoints
   })
-  return { teams: [base[0], base[1]] }
+  return { teams: base }
 }
 
 /** Sum of ordinary point values of a set of cards (no majority, no bonus). */
@@ -196,7 +201,7 @@ export function newMatch(config: GameConfig, rng: Rng, dealer?: number): MatchSt
   const d = dealer ?? Math.floor(rng() * config.playerCount)
   return {
     config,
-    scores: [0, 0],
+    scores: new Array<number>(teamCount(config.playerCount)).fill(0),
     dealer: d,
     roundNumber: 1,
     round: createRound(config, d, rng),
@@ -211,20 +216,18 @@ export function newMatch(config: GameConfig, rng: Rng, dealer?: number): MatchSt
 export function commitRound(match: MatchState): MatchState {
   if (match.round.phase !== 'finished' || match.roundCommitted) return match
   const score = scoreRound(match.round)
-  const scores: [number, number] = [
-    match.scores[0] + score.teams[0].total,
-    match.scores[1] + score.teams[1].total,
-  ]
+  const scores = match.scores.map((s, i) => s + score.teams[i].total)
   const t = match.config.targetScore
-  const reached = scores.map((x) => x >= t)
+  // Only sides at or above the target can win; the highest total wins, equal highest totals mean another round.
+  const reached = scores.filter((x) => x >= t)
   let winner: number | null = null
   let tiedAtTarget = false
-  if (reached[0] && reached[1]) {
-    if (scores[0] > scores[1]) winner = 0
-    else if (scores[1] > scores[0]) winner = 1
-    else tiedAtTarget = true // equal totals: play another round
-  } else if (reached[0]) winner = 0
-  else if (reached[1]) winner = 1
+  if (reached.length > 0) {
+    const top = Math.max(...reached)
+    const leaders = scores.map((x, i) => (x === top ? i : -1)).filter((i) => i >= 0)
+    if (leaders.length === 1) winner = leaders[0]
+    else tiedAtTarget = true
+  }
   return {
     ...match,
     scores,

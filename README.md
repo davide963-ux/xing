@@ -1,7 +1,7 @@
 # XING – Albanian card game
 
-Playable browser game (React + TypeScript + Vite). Modes: 1 vs 1 computer, or 2 vs 2 teams
-(you & Arben vs. Drita & Ilir). Rules follow the project ruleset: top-card matches, jack captures,
+Playable browser game (React + TypeScript + Vite). Modes: 1 vs 1 computer, 3 players (everyone for
+themselves), or 2 vs 2 teams (you & Arben vs. Drita & Ilir). Rules follow the project ruleset: top-card matches, jack captures,
 Xing +10, jack-on-jack Xing +20 (toggle), "Xing on the final card" (toggle, default off),
 scoring A/J = 1, 10♦ = 3, 2♣ = 2, most cards = 3, targets 51 / 101.
 
@@ -25,7 +25,8 @@ npm run build      # production build in dist/
 
 Notes on the implementation choices:
 
-- Seats: 0 = you (bottom); play order is seat+1, drawn counterclockwise. Teams are `seat % 2`.
+- Seats: 0 = you (bottom); play order is seat+1, drawn counterclockwise. Sides: 2 players -> one each,
+  3 players -> one each (three sides), 4 players -> `seat % 2` teams (see `teamOf` in `engine.ts`).
 - The AI gets only a `PublicView` (own hand, table with face-down cards masked, hand sizes, deck
   count, publicly revealed cards). It never receives the game state.
 - Cards captured from the table become public (revealed) at the moment of capture.
@@ -34,7 +35,7 @@ Notes on the implementation choices:
 
 ## Online play
 
-"Play online" puts you in a matchmaking queue (Supabase Realtime presence, one queue per mode: 2 or 4
+"Play online" puts you in a matchmaking queue (Supabase Realtime presence, one queue per mode: 2, 3 or 4
 players). When the table is full the earliest waiting player becomes the host: their browser runs the
 engine and sends each player a *masked* view of the match (other hands, deck order and face-down table
 cards are replaced by placeholders). Rules/target of the host's settings apply.

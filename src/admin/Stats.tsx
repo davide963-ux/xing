@@ -124,7 +124,7 @@ const WeeklyPoster = forwardRef<HTMLDivElement, { report: Report; showNames: boo
   const podium = top.filter((t) => t.wins > 0).slice(0, 3)
 
   const tiles: { icon: IconName; value: number | string; label: string; sub: string }[] = [
-    { icon: 'globe', value: cur.online_matches, label: 'Lojra online', sub: `2 lojtarë: ${cur.online_2p} · 4 lojtarë: ${cur.online_4p}` },
+    { icon: 'globe', value: cur.online_matches, label: 'Lojra online', sub: `2 lojtarë: ${cur.online_2p} · 3: ${cur.online_3p ?? 0} · 4: ${cur.online_4p}` },
     { icon: 'bot', value: cur.computer, label: 'Kundër kompjuterit', sub: cur.vs_computer_games ? `${winRate(cur)}% fitore të lojtarëve` : 'Ende asnjë lojë' },
     { icon: 'calendar', value: cur.daily, label: 'Sfida e Ditës', sub: `${cur.daily_players} lojtarë të ndryshëm` },
     { icon: 'spark', value: cur.xing10 + cur.xing20, label: 'Xing të bëra', sub: `${cur.xing20} me Jan (+20)` },

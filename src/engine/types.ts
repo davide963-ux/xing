@@ -18,7 +18,7 @@ export interface RulesConfig {
 export interface GameConfig {
   /** Display-only: whose screen this is and the seat names (set for online games). */
   view?: { me: number; names: string[] }
-  playerCount: 2 | 4
+  playerCount: 2 | 3 | 4
   targetScore: 51 | 101
   rules: RulesConfig
 }
@@ -82,19 +82,20 @@ export interface TeamRoundScore {
   total: number
 }
 
+/** One entry per side: 2 players -> 2 sides, 3 players -> 3 sides (everyone alone), 4 players -> 2 teams. */
 export interface RoundScore {
-  teams: [TeamRoundScore, TeamRoundScore]
+  teams: TeamRoundScore[]
 }
 
 export interface MatchState {
   config: GameConfig
-  scores: [number, number]
+  scores: number[]
   dealer: number
   roundNumber: number
   round: RoundState
   roundHistory: RoundScore[]
   winner: number | null
-  /** Set when both teams reached the target on equal totals. */
+  /** Set when the highest totals at or above the target are equal. */
   tiedAtTarget: boolean
   /** The finished round has been added to `scores`. */
   roundCommitted: boolean

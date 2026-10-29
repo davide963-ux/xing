@@ -1702,3 +1702,8 @@ a.btn {
   outline: 2px solid var(--gold);
   outline-offset: 2px;
 }
+
+/* third side (3-player games) */
+.team.t2 {
+  border-left: 4px solid #c78bff;
+}

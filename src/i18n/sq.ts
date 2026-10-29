@@ -27,6 +27,7 @@ export const sq = {
     close: 'Mbyll',
     signOut: 'Dil',
     players2: '2 lojtarë',
+    players3: '3 lojtarë',
     players4: '4 lojtarë',
   },
 
@@ -38,7 +39,7 @@ export const sq = {
     howTo: 'Si luhet',
     features: [
       { icon: 'globe', title: 'Online me shokët', text: 'Shtyp “Luaj” dhe prit pak: tavolina mbushet vetë me lojtarë.' },
-      { icon: 'users', title: '1 kundër 1 ose 2 kundër 2', text: 'Luaj vetë, ose në çifte me partnerin përballë.' },
+      { icon: 'users', title: '2, 3 ose 4 lojtarë', text: 'Luaj 1 kundër 1, tre secili për vete, ose në çifte me partnerin përballë.' },
       { icon: 'phone', title: 'Në telefon, pa shkarkim', text: 'Hap luajxing.com në shfletues dhe luaj menjëherë.' },
       { icon: 'bot', title: 'Të mungojnë shokët?', text: 'Stërvitu kundër kompjuterit sa herë të duash.' },
     ],
@@ -85,6 +86,7 @@ export const sq = {
     signedIn: tpl<[string]>('I kyçur si {name}', ['name']),
     mode: 'Lloji i lojës',
     mode2: 'Ti kundër kompjuterit',
+    mode3: 'Secili për vete: ti, Drita dhe Ilir',
     mode4: 'Ti & Arben kundër Drita & Ilir',
     playTo: 'Luaj deri në',
     points: tpl<[number]>('{n} pikë', ['n']),
@@ -181,9 +183,9 @@ export const sq = {
     waiting: 'Po pritet për lojtarët e tjerë…',
     win: 'Fitove!',
     teamWins: tpl<[string, boolean]>('{name} {single?fiton|fitojnë}', ['name', 'single']),
-    summary: tpl<[string, string, number, number, number]>(
-      '{a} kundër {b} · {rounds} {rounds=1?raund|raunde} · pikët Xing {x0} – {x1}',
-      ['a', 'b', 'rounds', 'x0', 'x1'],
+    summary: tpl<[string, number, string]>(
+      '{names} · {rounds} {rounds=1?raund|raunde} · pikët Xing {x}',
+      ['names', 'rounds', 'x'],
     ),
     finalBreakdown: 'Përmbledhja e raundit të fundit',
     again: 'Luaj përsëri',
@@ -360,7 +362,7 @@ export const sq = {
       {
         h: 'Letrat dhe lojtarët',
         p: [
-          '52 letra, pa xhokerë. Vlen vetëm numri i letrës, kurrë figura (maça, zemra, etj.). Luhet 1 kundër 1, ose 2 kundër 2 me partnerët përballë njëri-tjetrit; partnerët ndajnë letrat e marra dhe pikët.',
+          '52 letra, pa xhokerë. Vlen vetëm numri i letrës, kurrë figura (maça, zemra, etj.). Luhet 1 kundër 1, me 3 lojtarë (secili luan për vete), ose 2 kundër 2 me partnerët përballë njëri-tjetrit; partnerët ndajnë letrat e marra dhe pikët.',
         ],
       },
       {
@@ -393,7 +395,7 @@ export const sq = {
           ['Çdo as / çdo Jan', '1'],
           ['10♦', '3'],
           ['2♣', '2'],
-          ['Më shumë letra të marra (26–26 nuk jep asgjë)', '3'],
+          ['Më shumë letra të marra (nëse dy ose më shumë kanë të njëjtin numër më të lartë, nuk jep asgjë)', '3'],
           ['Xing / Xing me Jan', '10 / 20'],
         ],
         p: [

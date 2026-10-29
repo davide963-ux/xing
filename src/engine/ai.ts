@@ -9,7 +9,7 @@ import type { RoundState, Rng, RulesConfig } from './types'
  */
 export interface PublicView {
   seat: number
-  playerCount: 2 | 4
+  playerCount: 2 | 3 | 4
   rules: RulesConfig
   hand: number[]
   /** Table bottom -> top; `null` marks a face-down card that has not been revealed. */
@@ -48,7 +48,7 @@ export function chooseCard(view: PublicView, rng: Rng, level: AiLevel = 'normal'
 
   const me = view.seat
   const n = view.playerCount
-  const myTeam = teamOf(me)
+  const myTeam = teamOf(me, n)
 
   // --- card counting from public information only
   const seenByRank = new Array<number>(14).fill(0)
@@ -58,7 +58,7 @@ export function chooseCard(view: PublicView, rng: Rng, level: AiLevel = 'normal'
   const unseen = (rank: number) => Math.max(0, 4 - seenByRank[rank])
 
   const opponentSeats: number[] = []
-  for (let s = 0; s < n; s++) if (teamOf(s) !== myTeam) opponentSeats.push(s)
+  for (let s = 0; s < n; s++) if (teamOf(s, n) !== myTeam) opponentSeats.push(s)
   /** Probability that at least one opponent holds one of the unseen cards of a rank. */
   const pOppHolds = (rank: number): number => {
     const k = unseen(rank)

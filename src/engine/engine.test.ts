@@ -10,11 +10,13 @@ import {
   nextRound,
   playCard,
   scoreRound,
+  teamCount,
   teamOf,
 } from './engine'
 import type { GameConfig, RoundState, Suit } from './types'
 
 const cfg2: GameConfig = DEFAULT_CONFIG
+const cfg3: GameConfig = { ...DEFAULT_CONFIG, playerCount: 3 }
 const cfg4: GameConfig = { ...DEFAULT_CONFIG, playerCount: 4 }
 
 const SUIT_INDEX: Record<Suit, number> = { S: 0, H: 1, D: 2, C: 3 }
@@ -48,13 +50,16 @@ function custom(
     table: o.table ?? [],
     hiddenOnTable: [],
     deck: o.deck ?? [],
-    captured: [o.captured0 ?? [], rest],
+    // side 0 gets `captured0`, the last side gets every other card, any middle side stays empty
+    captured: Array.from({ length: teamCount(config.playerCount) }, (_, i) =>
+      i === 0 ? (o.captured0 ?? []) : i === teamCount(config.playerCount) - 1 ? rest : [],
+    ),
     current: o.current ?? 0,
     lastCapturer: o.lastCapturer ?? null,
     revealed: [],
     events: [],
-    xing10: [0, 0],
-    xing20: [0, 0],
+    xing10: new Array<number>(teamCount(config.playerCount)).fill(0),
+    xing20: new Array<number>(teamCount(config.playerCount)).fill(0),
   }
 }
 
@@ -66,7 +71,7 @@ const expectConserved = (s: RoundState) => {
 
 describe('dealing', () => {
   it('creates a legal initial layout for 2 and 4 players over many seeds', () => {
-    for (const config of [cfg2, cfg4]) {
+    for (const config of [cfg2, cfg3, cfg4]) {
       for (let seed = 1; seed <= 400; seed++) {
         const s = createRound(config, seed % config.playerCount, seededRng(seed))
         expect(s.table.length).toBe(4)
@@ -81,7 +86,7 @@ describe('dealing', () => {
   })
 
   it('deals 4 more to everyone when all hands are empty, without touching the table', () => {
-    for (const config of [cfg2, cfg4]) {
+    for (const config of [cfg2, cfg3, cfg4]) {
       let s = createRound(config, 0, seededRng(7))
       let deals = 0
       while (s.phase === 'playing') {
@@ -98,8 +103,8 @@ describe('dealing', () => {
         expectConserved(state)
         s = state
       }
-      // 2 players: 48/8 = 6 hands, so 5 re-deals; 4 players: 48/16 = 3 hands, so 2 re-deals
-      expect(deals).toBe(config.playerCount === 2 ? 5 : 2)
+      // 2 players: 48/8 = 6 hands (5 re-deals); 3 players: 48/12 = 4 hands (3); 4 players: 48/16 = 3 hands (2)
+      expect(deals).toBe(config.playerCount === 2 ? 5 : config.playerCount === 3 ? 3 : 2)
       expect(s.deck.length).toBe(0)
       expect(s.hands.flat().length).toBe(0)
     }
@@ -312,7 +317,7 @@ describe('scoring', () => {
       current: 2,
     })
     const a = playCard(s, 2, c(8, 'H'))
-    expect(teamOf(2)).toBe(0)
+    expect(teamOf(2, 4)).toBe(0)
     expect(a.state.xing10).toEqual([1, 0])
     expect(a.state.captured[0]).toEqual([c(8), c(8, 'H')])
     const s2 = custom(cfg4, { hands: [[c(2)], [c(3)], [c(5)], [c(8, 'D'), c(4)]], table: [c(8)], current: 3 })
@@ -378,8 +383,8 @@ describe('match flow', () => {
 })
 
 describe('full-game simulations', () => {
-  it('conserves 52 cards and totals 16 (or 13 on a tie) ordinary points, in both modes', () => {
-    for (const config of [cfg2, cfg4]) {
+  it('conserves 52 cards and totals 16 (or 13 when the most cards is tied) ordinary points, in every mode', () => {
+    for (const config of [cfg2, cfg3, cfg4]) {
       for (let seed = 1; seed <= 60; seed++) {
         const rng = seededRng(seed * 31)
         let s = createRound(config, seed % config.playerCount, rng)
@@ -393,9 +398,11 @@ describe('full-game simulations', () => {
         expect(plays).toBe(48)
         expect(s.table.length).toBe(s.lastCapturer === null ? s.table.length : 0)
         const sc = scoreRound(s)
-        const ordinary = sc.teams[0].cardPoints + sc.teams[1].cardPoints
-        expect(s.captured[0].length + s.captured[1].length).toBe(52)
-        expect(ordinary).toBe(s.captured[0].length === s.captured[1].length ? 13 : 16)
+        const ordinary = sc.teams.reduce((a, t) => a + t.cardPoints, 0)
+        const counts = s.captured.map((c) => c.length)
+        expect(counts.reduce((a, b) => a + b, 0)).toBe(52)
+        const top = Math.max(...counts)
+        expect(ordinary).toBe(counts.filter((x) => x === top).length === 1 ? 16 : 13)
       }
     }
   })
@@ -419,7 +426,7 @@ describe('AI information restrictions', () => {
 
   it('decisions are identical when all hidden cards are rearranged', () => {
     for (let seed = 1; seed <= 150; seed++) {
-      const config = seed % 2 ? cfg2 : cfg4
+      const config = [cfg2, cfg3, cfg4][seed % 3]
       const rng = seededRng(seed)
       let s = createRound(config, 0, rng)
       // advance a few moves to reach varied positions
@@ -477,5 +484,94 @@ describe('AI information restrictions', () => {
     const cap = custom(cfg2, { hands: [[c(3), c(9, 'H'), c(11)], [c(4), c(5)]], table: [c(2), c(7), c(9)] })
     cap.revealed = [c(2), c(7), c(9)]
     expect(chooseCard(getPublicView(cap, 0), rng)).toBe(c(9, 'H'))
+  })
+})
+
+describe('three players (everyone for themselves)', () => {
+  it('has three sides, one per seat', () => {
+    expect(teamCount(3)).toBe(3)
+    expect([0, 1, 2].map((s) => teamOf(s, 3))).toEqual([0, 1, 2])
+    expect(teamCount(2)).toBe(2)
+    expect(teamCount(4)).toBe(2)
+  })
+
+  it('deals 4 cards to each of three players and the first player is on the dealer right', () => {
+    const s = createRound(cfg3, 2, seededRng(4))
+    expect(s.hands.map((h) => h.length)).toEqual([4, 4, 4])
+    expect(s.deck.length).toBe(52 - 4 - 12)
+    expect(s.current).toBe(0) // (2 + 1) % 3
+    expect(s.captured.length).toBe(3)
+    expectConserved(s)
+  })
+
+  it('credits a capture and a Xing to the capturing player only', () => {
+    const s = custom(cfg3, {
+      hands: [[c(2)], [c(8, 'H'), c(9)], [c(4)]],
+      table: [c(8)],
+      current: 1,
+    })
+    const { state, event } = playCard(s, 1, c(8, 'H'))
+    expect(event.bonus).toBe(10)
+    expect(state.xing10).toEqual([0, 1, 0])
+    expect(state.captured[1]).toEqual([c(8), c(8, 'H')])
+    expect(state.current).toBe(2)
+  })
+
+  const split = (a: number, b: number, d: number) => {
+    const ids = ALL_CARDS.map((x) => x.id)
+    const base = createRound(cfg3, 0, seededRng(3))
+    return { ...base, hands: [[], [], []], deck: [], table: [], captured: [ids.slice(0, a), ids.slice(a, a + b), ids.slice(a + b, a + b + d)], phase: 'finished' as const }
+  }
+
+  it('gives the most-cards bonus to a single leader only', () => {
+    const sc = scoreRound(split(20, 16, 16))
+    expect(sc.teams.map((t) => t.majority)).toEqual([3, 0, 0])
+  })
+
+  it('gives nobody the bonus when two or more players tie for the most cards', () => {
+    const sc = scoreRound(split(18, 18, 16))
+    expect(sc.teams.map((t) => t.majority)).toEqual([0, 0, 0])
+    const all = scoreRound(split(17, 17, 18))
+    expect(all.teams.map((t) => t.majority)).toEqual([0, 0, 3])
+  })
+
+  const finished = (scores: number[]) => {
+    const m = newMatch(cfg3, seededRng(5), 0)
+    const ids = ALL_CARDS.map((x) => x.id)
+    return {
+      ...m,
+      scores,
+      round: { ...m.round, hands: [[], [], []], deck: [], table: [], captured: [ids.slice(0, 17), ids.slice(17, 34), ids.slice(34)], phase: 'finished' as const },
+    }
+  }
+
+  it('adds the round to three totals and ends the match for the highest total at the target', () => {
+    const none = commitRound(finished([10, 10, 10]))
+    expect(none.scores.length).toBe(3)
+    expect(none.winner).toBeNull()
+    // round totals for this split: 17 cards each side -> deterministic; push player 1 over the target
+    const base = commitRound(finished([0, 0, 0]))
+    const t = base.scores
+    const over = commitRound(finished([0, 101 - t[1], 0]))
+    expect(over.winner).toBe(1)
+  })
+
+  it('does not let a lower total win when two players pass the target', () => {
+    const base = commitRound(finished([0, 0, 0])).scores
+    const m = commitRound(finished([101 - base[0] + 5, 101 - base[1], 0]))
+    expect(m.scores[0]).toBeGreaterThan(m.scores[1])
+    expect(m.winner).toBe(0)
+  })
+
+  it('forces another round when the top totals at the target are equal', () => {
+    const base = commitRound(finished([0, 0, 0])).scores
+    const m = commitRound(finished([101 - base[0], 101 - base[1], 5]))
+    expect(m.scores[0]).toBe(101)
+    expect(m.scores[1]).toBe(101)
+    expect(m.winner).toBeNull()
+    expect(m.tiedAtTarget).toBe(true)
+    const n = nextRound(m, seededRng(9))
+    expect(n.round.hands.length).toBe(3)
+    expect(n.dealer).toBe(1)
   })
 })

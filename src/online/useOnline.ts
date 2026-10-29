@@ -1,7 +1,7 @@
 import type { RealtimeChannel } from '@supabase/supabase-js'
 import { useCallback, useEffect, useRef, useState } from 'react'
 import { supabase } from '../auth/supabase'
-import { canPlay, commitRound, newMatch, nextRound, playCard } from '../engine/engine'
+import { canPlay, commitRound, newMatch, nextRound, playCard, teamOf } from '../engine/engine'
 import type { MatchState } from '../engine/types'
 import { sq } from '../i18n/sq'
 import { submit, xingTotals } from '../stats/api'
@@ -48,7 +48,7 @@ function subscribe(ch: RealtimeChannel): Promise<void> {
 export function useOnline(name: string, settings: Settings, setSettings: (s: Settings) => void) {
   const [phase, setPhase] = useState<OnlinePhase>('idle')
   const [waiting, setWaiting] = useState(0)
-  const [wantPlayers, setWantPlayers] = useState<2 | 4>(2)
+  const [wantPlayers, setWantPlayers] = useState<2 | 3 | 4>(2)
   const [endMsg, setEndMsg] = useState<string | null>(null)
   const [match, setMatchState] = useState<MatchState | null>(null)
   const [anim, setAnim] = useState<Anim | null>(null)
@@ -174,7 +174,7 @@ export function useOnline(name: string, settings: Settings, setSettings: (s: Set
       if (next.winner !== null && roomId.current && !reported.current) {
         // every player reports the final score; the server only counts it when all reports agree
         reported.current = true
-        const myTeam = (next.config.view?.me ?? 0) % 2
+        const myTeam = teamOf(next.config.view?.me ?? 0, next.config.playerCount)
         const x = xingTotals(next.roundHistory, myTeam)
         void submit({
           fn: 'report_online',
@@ -184,6 +184,7 @@ export function useOnline(name: string, settings: Settings, setSettings: (s: Set
             p_my_team: myTeam,
             p_score0: next.scores[0],
             p_score1: next.scores[1],
+            p_score2: next.scores[2] ?? 0,
             p_rounds: next.roundHistory.length,
             p_xing10: x.x10,
             p_xing20: x.x20,
@@ -192,7 +193,7 @@ export function useOnline(name: string, settings: Settings, setSettings: (s: Set
       }
       if (next.round.phase === 'finished') {
         later(450, () => {
-          const myTeam = (next.config.view?.me ?? 0) % 2
+          const myTeam = teamOf(next.config.view?.me ?? 0, next.config.playerCount)
           if (next.winner !== null) sfx(next.winner === myTeam ? 'win' : 'lose')
           else sfx('round')
           setOverlay(next.winner !== null ? 'winner' : 'round')
@@ -272,7 +273,7 @@ export function useOnline(name: string, settings: Settings, setSettings: (s: Set
   // ------------------------------------------------------------------ matchmaking
 
   const search = useCallback(
-    (n: 2 | 4) => {
+    (n: 2 | 3 | 4) => {
       cleanup()
       const gen = generation.current
       const id = myId.current

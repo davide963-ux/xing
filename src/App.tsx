@@ -3,7 +3,7 @@ import { cardLabel } from './engine/cards'
 import type { GameConfig, MatchState } from './engine/types'
 import { Card } from './ui/Card'
 import { EndedScreen, LobbyScreen, RoundResults, RulesModal, SettingsModal, SetupScreen, WinnerScreen } from './ui/Panels'
-import { describeEvent, meOf, posOf, seatName, teamName } from './ui/format'
+import { describeEvent, meOf, myTeamOf, posOf, seatName, teamName } from './ui/format'
 import type { Pos } from './ui/format'
 import { useGame } from './ui/useGame'
 import type { Overlay, Settings } from './ui/useGame'
@@ -278,15 +278,15 @@ function GameView({ g, match, user }: { g: Ctl; match: MatchState; user: string 
 
 function Scoreboard({ match }: { match: MatchState }) {
   const { config, round } = match
-  const myTeam = meOf(config) % 2
-  const turnTeam = round.phase === 'playing' ? teamOf(round.current) : -1
+  const myTeam = myTeamOf(config)
+  const turnTeam = round.phase === 'playing' ? teamOf(round.current, config.playerCount) : -1
   return (
     <div className="scoreboard">
-      {[0, 1].map((t) => {
+      {match.scores.map((_, t) => {
         const past10 = match.roundHistory.reduce((a, r) => a + r.teams[t].xing10Count, 0) + round.xing10[t] * (match.roundCommitted ? 0 : 1)
         const past20 = match.roundHistory.reduce((a, r) => a + r.teams[t].xing20Count, 0) + round.xing20[t] * (match.roundCommitted ? 0 : 1)
         return (
-          <div key={t} className={`team ${t === myTeam ? 't0' : 't1'} ${turnTeam === t ? 'turn' : ''}`}>
+          <div key={t} className={`team ${t === myTeam ? 't0' : t === (myTeam === 0 ? 1 : 0) ? 't1' : 't2'} ${turnTeam === t ? 'turn' : ''}`}>
             <div className="tname">{teamName(config, t)}</div>
             <div className="tscore">{match.scores[t]}</div>
             <div className="tmeta">
@@ -312,7 +312,7 @@ function Scoreboard({ match }: { match: MatchState }) {
 function Opponent({ pos, seat, match, active }: { pos: Pos; seat: number; match: MatchState; active: boolean }) {
   const { config, round } = match
   const count = round.hands[seat].length
-  const partner = config.playerCount === 4 && teamOf(seat) === meOf(config) % 2
+  const partner = config.playerCount === 4 && teamOf(seat, 4) === myTeamOf(config)
   return (
     <div className={`opp ${pos} ${active ? 'active' : ''}`}>
       <div className="nameplate">

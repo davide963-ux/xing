@@ -5,7 +5,7 @@ import { sq } from '../i18n/sq'
 import { AdUnit } from './AdUnit'
 import { Icon, SuitRow } from './Icon'
 import type { Settings } from './useGame'
-import { meOf, teamName } from './format'
+import { myTeamOf, teamName } from './format'
 
 // ------------------------------------------------------------ settings form
 
@@ -21,6 +21,11 @@ export function SettingsForm({ value, onChange }: { value: Settings; onChange: (
           <input type="radio" name="mode" checked={config.playerCount === 2} onChange={() => setCfg({ playerCount: 2 })} />
           <b>{sq.common.players2}</b>
           <span>{s.mode2}</span>
+        </label>
+        <label className={`choice ${config.playerCount === 3 ? 'on' : ''}`}>
+          <input type="radio" name="mode" checked={config.playerCount === 3} onChange={() => setCfg({ playerCount: 3 })} />
+          <b>{sq.common.players3}</b>
+          <span>{s.mode3}</span>
         </label>
         <label className={`choice ${config.playerCount === 4 ? 'on' : ''}`}>
           <input type="radio" name="mode" checked={config.playerCount === 4} onChange={() => setCfg({ playerCount: 4 })} />
@@ -335,7 +340,7 @@ export function RoundResults({
   onContinue: () => void
   waiting?: boolean
 }) {
-  const myTeam = meOf(match.config) % 2
+  const myTeam = myTeamOf(match.config)
   const score = match.roundHistory[match.roundHistory.length - 1]
   const cfg = match.config
   const leftover = match.round.leftoverCount
@@ -350,7 +355,7 @@ export function RoundResults({
             <thead>
               <tr>
                 <th></th>
-                {[0, 1].map((t) => (
+                {score.teams.map((_, t) => (
                   <th key={t} className={t === myTeam ? 'me' : 'them'}>
                     {teamName(cfg, t)}
                   </th>
@@ -361,14 +366,16 @@ export function RoundResults({
               {ROWS.map((r) => (
                 <tr key={r.label} className={r.kind ?? ''}>
                   <td>{r.label}</td>
-                  <td>{r.get(score.teams[0])}</td>
-                  <td>{r.get(score.teams[1])}</td>
+                  {score.teams.map((t, i) => (
+                    <td key={i}>{r.get(t)}</td>
+                  ))}
                 </tr>
               ))}
               <tr className="match">
                 <td>{sq.results.match(cfg.targetScore)}</td>
-                <td>{match.scores[0]}</td>
-                <td>{match.scores[1]}</td>
+                {match.scores.map((s, i) => (
+                  <td key={i}>{s}</td>
+                ))}
               </tr>
             </tbody>
           </table>
@@ -396,23 +403,30 @@ export function WinnerScreen({
 }) {
   const cfg = match.config
   const w = match.winner!
-  const humanWon = w === meOf(cfg) % 2
+  const humanWon = w === myTeamOf(cfg)
   const score = match.roundHistory[match.roundHistory.length - 1]
-  const xing = [0, 1].map((t) => match.roundHistory.reduce((a, r) => a + r.teams[t].xingPoints, 0))
+  const xing = match.scores.map((_, t) => match.roundHistory.reduce((a, r) => a + r.teams[t].xingPoints, 0))
   return (
     <div className="backdrop win">
       <div className="modal winner" role="dialog" aria-label={sq.results.win}>
         <div className={`trophy ${humanWon ? 'won' : 'lost'}`}>
           <Icon name={humanWon ? 'trophy' : 'cards'} size={96} />
         </div>
-        <h2>{humanWon ? sq.results.win : sq.results.teamWins(teamName(cfg, w), cfg.playerCount === 2)}</h2>
+        <h2>{humanWon ? sq.results.win : sq.results.teamWins(teamName(cfg, w), cfg.playerCount !== 4)}</h2>
         <p className="big-score">
-          <span className={w === 0 ? 'hi' : ''}>{match.scores[0]}</span>
-          <i>–</i>
-          <span className={w === 1 ? 'hi' : ''}>{match.scores[1]}</span>
+          {match.scores.map((s, i) => (
+            <span key={i}>
+              {i > 0 && <i>–</i>}
+              <span className={w === i ? 'hi' : ''}>{s}</span>
+            </span>
+          ))}
         </p>
         <p className="note">
-          {sq.results.summary(teamName(cfg, 0), teamName(cfg, 1), match.roundHistory.length, xing[0], xing[1])}
+          {sq.results.summary(
+            match.scores.map((_, t) => teamName(cfg, t)).join(' · '),
+            match.roundHistory.length,
+            xing.join(' – '),
+          )}
         </p>
         <details>
           <summary>{sq.results.finalBreakdown}</summary>
@@ -421,8 +435,9 @@ export function WinnerScreen({
               {ROWS.map((r) => (
                 <tr key={r.label}>
                   <td>{r.label}</td>
-                  <td>{r.get(score.teams[0])}</td>
-                  <td>{r.get(score.teams[1])}</td>
+                  {score.teams.map((t, i) => (
+                    <td key={i}>{r.get(t)}</td>
+                  ))}
                 </tr>
               ))}
             </tbody>

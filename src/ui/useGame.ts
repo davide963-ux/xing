@@ -32,7 +32,7 @@ function loadSettings(): Settings {
       const p = JSON.parse(raw)
       return {
         config: {
-          playerCount: p.config?.playerCount === 4 ? 4 : 2,
+          playerCount: p.config?.playerCount === 4 ? 4 : p.config?.playerCount === 3 ? 3 : 2,
           targetScore: p.config?.targetScore === 51 ? 51 : 101,
           rules: {
             jackXing20: p.config?.rules?.jackXing20 !== false,
