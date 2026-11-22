@@ -40,6 +40,12 @@ players). When the table is full the earliest waiting player becomes the host: t
 engine and sends each player a *masked* view of the match (other hands, deck order and face-down table
 cards are replaced by placeholders). Rules/target of the host's settings apply.
 
+**Private rooms (play with friends):** "Luaj me shokët" creates a room with an automatic 5-character code
+(`src/online/roomCode.ts`, no look-alike characters). The room is a Realtime presence channel named after
+the code; the creator is always seat 0 and sets the rules, friends join by typing the code or opening
+`luajxing.com/#room=CODE`. The game starts by itself when all seats are filled; if the creator leaves first,
+guests are told the room was closed.
+
 Limitations: no database or server code is used, so a technically skilled player could in principle
 inspect the host's browser or the Realtime traffic; there is no reconnect (if anyone leaves, the match
 ends); no stats are stored. Needs login (Supabase Auth) like the rest of the game.

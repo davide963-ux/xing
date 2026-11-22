@@ -10,9 +10,23 @@ import type { Anim, Banner } from '../ui/playFx'
 import { sfx } from '../ui/sound'
 import type { Modal, Overlay, Settings } from '../ui/useGame'
 import { maskMatch } from './protocol'
+import { genRoomCode, isValidRoomCode } from './roomCode'
 import type { HostMsg, LobbyPlayer, MatchOffer, Snapshot } from './protocol'
 
 export type OnlinePhase = 'idle' | 'searching' | 'joining' | 'playing' | 'ended'
+
+/** A private room the player is waiting in (before the game starts). */
+export interface RoomInfo {
+  code: string
+  n: 2 | 3 | 4
+  isHost: boolean
+  players: string[]
+}
+
+type Entry = { kind: 'queue'; n: 2 | 3 | 4 } | { kind: 'create'; n: 2 | 3 | 4; code: string } | { kind: 'join'; code: string }
+
+const byPlace = (a: LobbyPlayer, b: LobbyPlayer) =>
+  Number(!!b.host) - Number(!!a.host) || a.t - b.t || a.id.localeCompare(b.id)
 
 const JOIN_TIMEOUT_MS = 15000
 
@@ -50,6 +64,8 @@ export function useOnline(name: string, settings: Settings, setSettings: (s: Set
   const [waiting, setWaiting] = useState(0)
   const [wantPlayers, setWantPlayers] = useState<2 | 3 | 4>(2)
   const [endMsg, setEndMsg] = useState<string | null>(null)
+  const [endRoom, setEndRoom] = useState(false)
+  const [room, setRoom] = useState<RoomInfo | null>(null)
   const [match, setMatchState] = useState<MatchState | null>(null)
   const [anim, setAnim] = useState<Anim | null>(null)
   const [banner, setBanner] = useState<Banner | null>(null)
@@ -59,6 +75,7 @@ export function useOnline(name: string, settings: Settings, setSettings: (s: Set
 
   const myId = useRef(crypto.randomUUID())
   const chans = useRef<RealtimeChannel[]>([])
+  const removal = useRef<Promise<unknown>>(Promise.resolve())
   const timers = useRef<number[]>([])
   const matchRef = useRef<MatchState | null>(null)
   const phaseRef = useRef<OnlinePhase>('idle')
@@ -111,7 +128,8 @@ export function useOnline(name: string, settings: Settings, setSettings: (s: Set
     generation.current++
     timers.current.forEach((t) => window.clearTimeout(t))
     timers.current = []
-    chans.current.forEach((c) => void supabase.removeChannel(c))
+    // a new connection to the same topic must wait until the old channel is really gone
+    removal.current = Promise.allSettled(chans.current.map((c) => supabase.removeChannel(c)))
     chans.current = []
     hostRef.current = null
     hostCh.current = null
@@ -135,6 +153,8 @@ export function useOnline(name: string, settings: Settings, setSettings: (s: Set
     cleanup()
     setMatch(null)
     setEndMsg(null)
+    setEndRoom(false)
+    setRoom(null)
     setModal(null)
     setPhaseBoth('idle')
   }, [cleanup, setMatch, setPhaseBoth])
@@ -271,34 +291,61 @@ export function useOnline(name: string, settings: Settings, setSettings: (s: Set
   )
 
   // ------------------------------------------------------------------ matchmaking
+  // One routine serves the public queue and private rooms. A room is a presence channel named after its
+  // code: the creator is always listed first (and so becomes host/seat 0); guests learn the room size
+  // from the creator's presence entry.
 
-  const search = useCallback(
-    (n: 2 | 3 | 4) => {
+  const connect = useCallback(
+    (entry: Entry): void => {
       cleanup()
       const gen = generation.current
       const id = myId.current
-      setWantPlayers(n)
+      let need: number | null = entry.kind === 'join' ? null : entry.n
+      if (need) setWantPlayers(need as 2 | 3 | 4)
       setEndMsg(null)
+      setEndRoom(false)
       setWaiting(1)
       setMatch(null)
+      setRoom(
+        entry.kind === 'queue'
+          ? null
+          : { code: entry.code, n: (need ?? 2) as 2 | 3 | 4, isHost: entry.kind === 'create', players: [nameRef.current] },
+      )
       setPhaseBoth('searching')
 
-      const lobby = supabase.channel(`xing-lobby-v1-${n}`, { config: { presence: { key: id } } })
+      const start = (): void => {
+        if (gen !== generation.current) return
+      const channelName = entry.kind === 'queue' ? `xing-lobby-v1-${entry.n}` : `xing-room-v1-${entry.code}`
+      const lobby = supabase.channel(channelName, { config: { presence: { key: id } } })
       chans.current.push(lobby)
       let matched = false
+      let sawHost = entry.kind === 'create'
       const joinedAt = Date.now()
+      const isRoom = entry.kind !== 'queue'
 
+      /** Leave the lobby/room channel (so nobody keeps seeing us there) and show a message. */
+      const fail = (msg: string, fromRoom = isRoom) => {
+        if (gen !== generation.current) return
+        cleanup()
+        setRoom(null)
+        setEndRoom(fromRoom)
+        setEndMsg(msg)
+        setPhaseBoth('ended')
+      }
       const retry = () => {
-        if (gen === generation.current) search(n)
+        if (gen !== generation.current) return
+        if (entry.kind === 'queue') connect(entry)
+        else fail(sq.online.noServer)
       }
 
-      const enterRoom = async (offer: MatchOffer) => {
+      const enterMatch = async (offer: MatchOffer) => {
         matched = true
         const players = offer.players
         const seat = players.findIndex((p) => p.id === id)
         const isHost = seat === 0
         roomPlayers.current = players
         roomId.current = offer.roomId
+        setRoom(null)
         setPhaseBoth('joining')
         void lobby.untrack()
         void supabase.removeChannel(lobby)
@@ -372,36 +419,98 @@ export function useOnline(name: string, settings: Settings, setSettings: (s: Set
       lobby.on('presence', { event: 'sync' }, () => {
         if (matched) return
         const state = lobby.presenceState() as Record<string, LobbyPlayer[]>
-        const list = Object.values(state)
+        const all = Object.values(state)
           .map((a) => a[0])
           .filter(Boolean)
-          .sort((a, b) => a.t - b.t || a.id.localeCompare(b.id))
-        setWaiting(list.length)
-        if (list.length >= n && list[0].id === id) {
+
+        if (entry.kind === 'join') {
+          const host = all.filter((p) => p.host).sort(byPlace)[0]
+          if (!host) {
+            if (sawHost) fail(sq.room.closed) // the creator left while we were waiting
+            return // otherwise keep waiting: the not-found timer below decides
+          }
+          sawHost = true
+          if (need !== host.n) {
+            need = host.n ?? 2
+            setWantPlayers(need as 2 | 3 | 4)
+          }
+        }
+        const list = all.sort(byPlace)
+        const size = need ?? 2
+        if (entry.kind === 'join' && list.findIndex((p) => p.id === id) >= size) {
+          fail(sq.room.full)
+          return
+        }
+        setWaiting(Math.min(list.length, size))
+        if (isRoom) {
+          setRoom({
+            code: (entry as { code: string }).code,
+            n: size as 2 | 3 | 4,
+            isHost: entry.kind === 'create',
+            players: list.slice(0, size).map((p) => p.name),
+          })
+        }
+        if (list.length >= size && list[0].id === id) {
           const offer: MatchOffer = {
             roomId: crypto.randomUUID(),
-            players: list.slice(0, n),
-            config: { ...settingsRef.current.config, playerCount: n },
+            players: list.slice(0, size),
+            config: { ...settingsRef.current.config, playerCount: size as 2 | 3 | 4 },
           }
           matched = true
           void lobby.send({ type: 'broadcast', event: 'match', payload: offer })
-          void enterRoom(offer)
+          void enterMatch(offer)
         }
       })
       lobby.on('broadcast', { event: 'match' }, ({ payload }) => {
         const offer = payload as MatchOffer
-        if (!matched && offer.players.some((p) => p.id === id)) void enterRoom(offer)
+        if (!matched && offer.players.some((p) => p.id === id)) void enterMatch(offer)
       })
-      subscribe(lobby)
-        .then(() => lobby.track({ id, name: nameRef.current, t: joinedAt }))
-        .catch(() => {
-          if (gen === generation.current) {
-            setEndMsg(sq.online.noServer)
-            setPhaseBoth('ended')
-          }
+      if (entry.kind === 'join') {
+        later(6000, () => {
+          if (!matched && !sawHost) fail(sq.room.notFound)
         })
+      }
+      subscribe(lobby)
+        .then(() =>
+          lobby.track({
+            id,
+            name: nameRef.current,
+            t: joinedAt,
+            ...(entry.kind === 'create' ? { host: true, n: entry.n } : {}),
+          }),
+        )
+        .catch(() => fail(sq.online.noServer, false))
+      }
+      void removal.current.then(start)
     },
     [cleanup, enqueue, hostApply, hostReady, later, setMatch, setPhaseBoth, startHostGame],
+  )
+
+  /** Public queue. */
+  const search = useCallback((n: 2 | 3 | 4) => connect({ kind: 'queue', n }), [connect])
+  /** Create a private room for `n` players; returns its code. */
+  const createRoom = useCallback(
+    (n: 2 | 3 | 4): string => {
+      const code = genRoomCode()
+      connect({ kind: 'create', n, code })
+      return code
+    },
+    [connect],
+  )
+  /** Join a room with a (normalized) code. */
+  const joinRoom = useCallback(
+    (code: string) => {
+      if (!isValidRoomCode(code)) {
+        cleanup()
+        setRoom(null)
+        setEndRoom(true)
+        setEndMsg(sq.room.badCode)
+        setPhaseBoth('ended')
+        return
+      }
+      connect({ kind: 'join', code })
+    },
+    [cleanup, connect, setPhaseBoth],
   )
 
   // ------------------------------------------------------------------ actions
@@ -449,6 +558,10 @@ export function useOnline(name: string, settings: Settings, setSettings: (s: Set
     setModal,
     waitingNext,
     search,
+    createRoom,
+    joinRoom,
+    room,
+    endRoom,
     leave,
     play,
     continueRound,

@@ -1,8 +1,8 @@
-import { useEffect, useMemo, useState } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
 import { cardLabel } from './engine/cards'
 import type { GameConfig, MatchState } from './engine/types'
 import { Card } from './ui/Card'
-import { EndedScreen, LobbyScreen, RoundResults, RulesModal, SettingsModal, SetupScreen, WinnerScreen } from './ui/Panels'
+import { EndedScreen, FriendsCard, LobbyScreen, RoomScreen, RoundResults, RulesModal, SettingsModal, SetupScreen, WinnerScreen } from './ui/Panels'
 import { describeEvent, meOf, myTeamOf, posOf, seatName, teamName } from './ui/format'
 import type { Pos } from './ui/format'
 import { useGame } from './ui/useGame'
@@ -19,6 +19,7 @@ import { flushOutbox } from './stats/api'
 import { AdminPage } from './admin/Admin'
 import { checkAdmin, fetchOverrides } from './admin/api'
 import { applyOverrides, cacheOverrides, useTextsVersion } from './i18n/texts'
+import { codeFromHash } from './online/roomCode'
 import type { DailyResult } from './engine/daily'
 
 export default function App() {
@@ -72,10 +73,28 @@ function Game({ user }: { user: string }) {
   useEffect(() => {
     void checkAdmin().then(setAdmin)
   }, [])
+  // a shared link like luajxing.com/#room=K7M2Q joins that room once the player is signed in
+  // (checked when the page opens and whenever the link in the address bar changes)
+  const joinRoomRef = useRef<(code: string) => void>(() => {})
+  useEffect(() => {
+    const check = () => {
+      const code = codeFromHash(location.hash)
+      if (code === null) return
+      // tidy the address bar a moment later (not at once, so a re-run of this effect still sees the code)
+      window.setTimeout(() => {
+        if (codeFromHash(location.hash) === code) history.replaceState(null, '', location.pathname + location.search)
+      }, 50)
+      joinRoomRef.current(code)
+    }
+    check()
+    window.addEventListener('hashchange', check)
+    return () => window.removeEventListener('hashchange', check)
+  }, [])
   useEffect(() => {
     void flushOutbox() // retry results that could not be sent earlier
   }, [])
   const on = useOnline(user, off.settings, off.setSettings)
+  joinRoomRef.current = on.joinRoom
   const { settings } = off
 
   const offline: Ctl = {
@@ -100,10 +119,12 @@ function Game({ user }: { user: string }) {
   let screen
   if (hash === '#admin') {
     screen = <AdminPage onExit={() => (location.hash = '')} />
+  } else if (on.phase === 'searching' && on.room) {
+    screen = <RoomScreen room={on.room} onLeave={on.leave} />
   } else if (on.phase === 'searching' || on.phase === 'joining') {
     screen = <LobbyScreen phase={on.phase} waiting={on.waiting} need={on.wantPlayers} onCancel={on.leave} />
   } else if (on.phase === 'ended') {
-    screen = <EndedScreen message={on.endMsg} onRetry={() => on.search(on.wantPlayers)} onMenu={on.leave} />
+    screen = <EndedScreen message={on.endMsg} onRetry={() => on.search(on.wantPlayers)} onMenu={on.leave} canRetry={!on.endRoom} />
   } else if (!match) {
     screen = (
       <SetupScreen
@@ -115,7 +136,16 @@ function Game({ user }: { user: string }) {
         onBoard={() => setPanel('board')}
         onAdmin={admin ? () => (location.hash = '#admin') : undefined}
         onRules={() => off.setModal('rules')}
-        extra={<DailyCard dayKey={off.dayKey} result={off.dailyResult} onPlay={off.startDaily} />}
+        extra={
+          <>
+            <DailyCard dayKey={off.dayKey} result={off.dailyResult} onPlay={off.startDaily} />
+            <FriendsCard
+              players={settings.config.playerCount}
+              onCreate={() => on.createRoom(settings.config.playerCount)}
+              onJoin={(code) => on.joinRoom(code)}
+            />
+          </>
+        }
         user={user}
         onSignOut={() => void signOut()}
       />

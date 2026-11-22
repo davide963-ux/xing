@@ -2,6 +2,8 @@ import { useState } from 'react'
 import type { AiLevel } from '../engine/ai'
 import type { GameConfig, MatchState, RoundScore } from '../engine/types'
 import { sq } from '../i18n/sq'
+import { roomLink, normalizeRoomCode, ROOM_CODE_LENGTH } from '../online/roomCode'
+import type { RoomInfo } from '../online/useOnline'
 import { AdUnit } from './AdUnit'
 import { Icon, SuitRow } from './Icon'
 import type { Settings } from './useGame'
@@ -499,21 +501,154 @@ export function EndedScreen({
   message,
   onRetry,
   onMenu,
+  canRetry = true,
 }: {
   message: string | null
   onRetry: () => void
   onMenu: () => void
+  canRetry?: boolean
 }) {
   return (
     <div className="setup">
       <div className="setup-card lobby">
         <h2>{message ?? sq.online.left}</h2>
         <div className="row">
-          <button className="btn primary" onClick={onRetry}>
-            {sq.online.another}
-          </button>
-          <button className="btn" onClick={onMenu}>
+          {canRetry && (
+            <button className="btn primary" onClick={onRetry}>
+              {sq.online.another}
+            </button>
+          )}
+          <button className={canRetry ? 'btn' : 'btn primary'} onClick={onMenu}>
             {sq.results.menu}
+          </button>
+        </div>
+      </div>
+    </div>
+  )
+}
+
+// ------------------------------------------------------------ private rooms (play with friends)
+
+/** Menu card: create a private room, or join one with a code. */
+export function FriendsCard({
+  players,
+  onCreate,
+  onJoin,
+}: {
+  players: 2 | 3 | 4
+  onCreate: () => void
+  onJoin: (code: string) => void
+}) {
+  const [code, setCode] = useState('')
+  const r = sq.room
+  const ready = code.length === ROOM_CODE_LENGTH
+  return (
+    <section className="friends-card">
+      <h2>
+        <Icon name="users" size={22} className="h-ico" /> {r.friendsTitle}
+      </h2>
+      <p className="note">{r.friendsHint}</p>
+      <div className="row">
+        <button className="btn primary" onClick={onCreate}>
+          {r.create(players)}
+        </button>
+      </div>
+      <form
+        className="join-row"
+        onSubmit={(e) => {
+          e.preventDefault()
+          if (ready) onJoin(code)
+        }}
+      >
+        <label className="field">
+          <span>{r.haveCode}</span>
+          <input
+            value={code}
+            onChange={(e) => setCode(normalizeRoomCode(e.target.value).slice(0, ROOM_CODE_LENGTH))}
+            placeholder={r.codePlaceholder}
+            autoCapitalize="characters"
+            autoComplete="off"
+            spellCheck={false}
+            inputMode="text"
+            maxLength={ROOM_CODE_LENGTH + 2}
+            aria-label={r.codeLabel}
+          />
+        </label>
+        <button className="btn primary" type="submit" disabled={!ready}>
+          {r.join}
+        </button>
+      </form>
+    </section>
+  )
+}
+
+/** Waiting room: the code, how to share it, and who has joined so far. */
+export function RoomScreen({ room, onLeave }: { room: RoomInfo; onLeave: () => void }) {
+  const r = sq.room
+  const [copied, setCopied] = useState<'code' | 'link' | null>(null)
+  const link = roomLink(room.code, window.location.origin.startsWith('http') ? window.location.origin : undefined)
+  const text = r.shareText(room.code, link)
+
+  async function copy(what: 'code' | 'link') {
+    try {
+      await navigator.clipboard.writeText(what === 'code' ? room.code : link)
+      setCopied(what)
+      window.setTimeout(() => setCopied(null), 2000)
+    } catch {
+      /* clipboard blocked: the code is on screen and WhatsApp still works */
+    }
+  }
+
+  return (
+    <div className="setup">
+      <div className="setup-card lobby room">
+        <h1 className="logo">
+          XING<span><SuitRow /></span>
+        </h1>
+        <h2>{room.isHost ? r.yourRoom : r.guestRoom}</h2>
+        <div className="room-code" aria-label={r.codeLabel}>
+          {[...room.code].map((ch, i) => (
+            <span key={i}>{ch}</span>
+          ))}
+        </div>
+        {room.isHost ? (
+          <>
+            <p className="note">{r.shareHint}</p>
+            <div className="row">
+              <button className="btn primary" onClick={() => copy('code')}>
+                {copied === 'code' ? r.copied : r.copyCode}
+              </button>
+              <a className="btn" href={`https://wa.me/?text=${encodeURIComponent(text)}`} target="_blank" rel="noopener noreferrer">
+                {r.whatsapp}
+              </a>
+              <button className="btn" onClick={() => copy('link')}>
+                {copied === 'link' ? r.copied : r.copyLink}
+              </button>
+            </div>
+          </>
+        ) : (
+          <p className="note">{r.guestWait(room.code)}</p>
+        )}
+        <ul className="seats">
+          {Array.from({ length: room.n }, (_, i) => (
+            <li key={i} className={room.players[i] ? 'on' : ''}>
+              <span className="seatdot on-dot" />
+              {room.players[i] ? (
+                <>
+                  {room.players[i]} {i === 0 && <small>{r.host}</small>}
+                </>
+              ) : (
+                <em>{r.waitingSeat}</em>
+              )}
+            </li>
+          ))}
+        </ul>
+        <p className="note">
+          {r.players(Math.min(room.players.length, room.n), room.n)}. {r.startsWhenFull}
+        </p>
+        <div className="row">
+          <button className="btn" onClick={onLeave}>
+            {r.leave}
           </button>
         </div>
       </div>

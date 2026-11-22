@@ -4,6 +4,10 @@ export interface LobbyPlayer {
   id: string
   name: string
   t: number
+  /** Private rooms only: the creator of the room (always seat 0, sets the rules). */
+  host?: boolean
+  /** Private rooms only: how many players the creator wants (2, 3 or 4). */
+  n?: number
 }
 
 export interface MatchOffer {

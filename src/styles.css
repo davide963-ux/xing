@@ -1707,3 +1707,109 @@ a.btn {
 .team.t2 {
   border-left: 4px solid #c78bff;
 }
+
+/* ---------- private rooms (play with friends) */
+.friends-card {
+  border: 2px solid var(--me);
+  background: rgba(76, 201, 160, 0.08);
+  border-radius: 16px;
+  padding: 0.8rem 1rem 1rem;
+  margin: 0 0 1rem;
+  text-align: center;
+}
+.friends-card h2 {
+  margin: 0 0 0.3rem;
+  color: var(--me);
+  font-size: 1.2rem;
+}
+.friends-card .note {
+  margin: 0.2rem 0 0.6rem;
+}
+.friends-card .row {
+  margin-top: 0.4rem;
+}
+.join-row {
+  display: flex;
+  gap: 0.6rem;
+  align-items: flex-end;
+  margin-top: 0.9rem;
+  text-align: left;
+}
+.join-row .field {
+  flex: 1;
+  margin: 0;
+}
+.join-row input {
+  text-transform: uppercase;
+  letter-spacing: 0.3em;
+  font-weight: 800;
+  font-size: 1.1rem;
+}
+.room-code {
+  display: flex;
+  justify-content: center;
+  gap: 0.45rem;
+  margin: 0.8rem 0 0.4rem;
+}
+.room-code span {
+  width: clamp(44px, 14vw, 62px);
+  height: clamp(58px, 18vw, 80px);
+  display: grid;
+  place-items: center;
+  font-size: clamp(1.8rem, 8vw, 2.6rem);
+  font-weight: 900;
+  font-family: Georgia, serif;
+  color: #2b2100;
+  border-radius: 12px;
+  background: linear-gradient(135deg, #ffe9a3, #f2c14e 55%, #c99212);
+  box-shadow: 0 8px 18px rgba(0, 0, 0, 0.4), inset 0 2px 0 rgba(255, 255, 255, 0.5);
+}
+.seats {
+  list-style: none;
+  padding: 0;
+  margin: 1rem 0 0.6rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+  text-align: left;
+}
+.seats li {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  padding: 0.5rem 0.8rem;
+  border-radius: 10px;
+  background: rgba(255, 255, 255, 0.06);
+  border: 1px dashed rgba(255, 255, 255, 0.25);
+  color: var(--muted);
+}
+.seats li.on {
+  border: 1px solid var(--me);
+  background: rgba(76, 201, 160, 0.15);
+  color: var(--text);
+  font-weight: 700;
+}
+.seats .on-dot {
+  background: transparent;
+  border: 2px solid rgba(255, 255, 255, 0.35);
+  width: 14px;
+  height: 14px;
+  border-radius: 50%;
+  display: inline-block;
+}
+.seats li.on .on-dot {
+  background: var(--me);
+  border-color: var(--me);
+}
+.seats small {
+  color: var(--gold);
+  font-weight: 600;
+}
+.room .row {
+  margin-top: 0.8rem;
+}
+
+a.btn,
+a.btn:visited {
+  color: inherit;
+}
